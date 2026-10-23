@@ -1,0 +1,341 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_schema": {
+    "name": "maestro_x_canonical_run_artifacts",
+    "version": "1.0.0"
+  },
+  "pipeline": {
+    "name": "MAESTRO-X canonical research pipeline",
+    "version": "1.0.0",
+    "command": "python -m src.run_research_pipeline",
+    "runtime_versions": {
+      "python": "3.13.5",
+      "pandas": "2.3.1",
+      "numpy": "2.3.1",
+      "scipy": "1.17.1",
+      "matplotlib": "3.10.7",
+      "plotly": "6.9.0",
+      "pyyaml": "6.0.2"
+    }
+  },
+  "run_id": "20260824_141758",
+  "status": "completed_with_empirical_limitations",
+  "schemas": {
+    "registry": {
+      "version": "1.0.0"
+    },
+    "dataset": {
+      "name": "maestro_x_normalized_trade_dataset",
+      "version": "1.0.0"
+    },
+    "performance": {
+      "name": "maestro_x_performance_metrics",
+      "version": "1.0.0"
+    },
+    "artifact": {
+      "name": "maestro_x_canonical_run_artifacts",
+      "version": "1.0.0"
+    }
+  },
+  "parameters": {
+    "monte_carlo_simulations_per_method_timeframe": 10000,
+    "base_random_seed": 20260822,
+    "strategy_parameters_optimized": false
+  },
+  "strategy": {
+    "path": "strategy/MAESTRO-X_v1.0.pine",
+    "size_bytes": 119518,
+    "sha256": "a4e94a39fdf2806db07b0142ad8a014ad1f60ea76efcead4c648e6ae744e0bc6",
+    "modified_by_pipeline": false
+  },
+  "raw_sources": [
+    {
+      "path": "data/raw/trades/tf15menit.csv",
+      "size_bytes": 18564,
+      "sha256": "16667494626d0e37fd2f0fc38dba67bd153d8100da83871ac9c3bc8fd36bd479",
+      "modified_by_pipeline": false
+    },
+    {
+      "path": "data/raw/trades/tf1hari.csv",
+      "size_bytes": 41796,
+      "sha256": "cd586bb6be299ed9490eafc816f970e8ecced562494858264e5934ee9c43390d",
+      "modified_by_pipeline": false
+    },
+    {
+      "path": "data/raw/trades/tf1jam.csv",
+      "size_bytes": 12517,
+      "sha256": "54b744781136c5182a7cc0172abab263421198ed6da7806bfed89b426c4eade2",
+      "modified_by_pipeline": false
+    },
+    {
+      "path": "data/raw/trades/tf1menit.csv",
+      "size_bytes": 12574,
+      "sha256": "2ea89b322c420a6fbb936c4a0ba7e8d05c900e7833b0daef1609cc31234bc50a",
+      "modified_by_pipeline": false
+    },
+    {
+      "path": "data/raw/trades/tf2jam.csv",
+      "size_bytes": 29653,
+      "sha256": "0d8b770a962ec816734400ea3ea5feef0b15812f3050a34418df3768471ff999",
+      "modified_by_pipeline": false
+    },
+    {
+      "path": "data/raw/trades/tf30menit.csv",
+      "size_bytes": 24131,
+      "sha256": "87d2ec3e5dc3a131d686bf64fbb49c03056726bfbac715f4867d0c4500d2d7aa",
+      "modified_by_pipeline": false
+    },
+    {
+      "path": "data/raw/trades/tf4jam.csv",
+      "size_bytes": 36564,
+      "sha256": "813f1d143a9f63415a67c627edeecd50e0cb1d421eeca9e28d91e5209a554ab5",
+      "modified_by_pipeline": false
+    },
+    {
+      "path": "data/raw/trades/tf5menit.csv",
+      "size_bytes": 12614,
+      "sha256": "c77cdfa91e8bd553dd0be8ed2968ed82693794f16c5acba1c7237f3601b80e68",
+      "modified_by_pipeline": false
+    }
+  ],
+  "phase_summaries": {
+    "preprocessing": {
+      "status": "completed_with_quarantined_rows",
+      "raw_rows": 918,
+      "target_candidate_rows": 325,
+      "accepted_rows": 323,
+      "rejected_rows": 2,
+      "closed_rows": 322,
+      "open_rows": 1,
+      "report": "reports/preprocessing_report.json",
+      "summary": "tables/processed_dataset_summary.csv"
+    },
+    "performance_engine": {
+      "engine_version": "1.0.0",
+      "status": "completed_observed_subset",
+      "timeframes": 8,
+      "processed_rows": 323,
+      "closed_trades_analyzed": 322,
+      "open_trades_excluded": 1,
+      "upstream_quarantined_rows": 2,
+      "tradingview_comparable_timeframes": 0,
+      "metrics_path": "tables/performance_metrics.csv",
+      "figure_path": "figures/equity_curve.png",
+      "processed_hashes_unchanged": true
+    },
+    "monte_carlo_engine": {
+      "engine_version": "2.0.0",
+      "status": "completed_observed_subset_no_future_claim",
+      "timeframes": 8,
+      "methods": 2,
+      "simulations_per_method_timeframe": 10000,
+      "total_simulated_paths": 160000,
+      "closed_trades_used": 322,
+      "open_trades_excluded": 1,
+      "upstream_quarantined_rows": 2,
+      "bootstrap_negative_return_probability_min_pct": 0.35000000000000003,
+      "bootstrap_negative_return_probability_max_pct": 56.06,
+      "processed_hashes_unchanged": true,
+      "future_profitability_claimed": false,
+      "report_path": "reports/monte_carlo_report.html",
+      "statistics_path": "tables/monte_carlo_statistics.csv",
+      "figure_path": "figures/monte_carlo_distribution.png",
+      "analysis_fingerprint": "e0991b62ecb620466c68d3a7dd1da1a2ff29282e2f00f385c0ce03bb904a509d",
+      "base_seed": 20260822
+    },
+    "sensitivity_engine": {
+      "rows": 16,
+      "diagnostics": {
+        "engine_version": "1.0.0",
+        "analysis_scope": "descriptive_observed_outputs_only",
+        "methodology_status": "no_parameter_optimization",
+        "timeframes_observed": 8,
+        "controlled_parameter_grids": 0,
+        "parameters_fully_estimable": 0,
+        "parameters_descriptive_only": 1,
+        "parameters_not_estimable": 2,
+        "positive_expectancy_timeframes": 7,
+        "profit_factor_above_one_timeframes": 7,
+        "bootstrap_intervals_crossing_zero": 6,
+        "bootstrap_intervals_excluding_zero": 2,
+        "dispersion_concentration_hhi": 0.16025118808976307,
+        "dispersion_concentration_normalized_hhi": 0.04028707210258637,
+        "dispersion_effective_contributors": 6.240203345262315,
+        "largest_dispersion_contributor": "4h",
+        "largest_dispersion_share_pct": 23.052017570717116,
+        "top_two_dispersion_contributors": [
+          "4h",
+          "30m"
+        ],
+        "top_two_dispersion_share_pct": 45.65219921802898,
+        "parameter_stability": "not_formally_estimable_descriptive_outcomes_mixed",
+        "robustness_region": "not_identifiable_without_controlled_grid",
+        "overfitting_risk": "indeterminate_with_elevated_evidence_gap",
+        "optimization_performed": false,
+        "future_profitability_claimed": false
+      },
+      "input_hashes": {
+        "tables/performance_metrics.csv": "2c4d5d547d0600d0398c25d31a23baf2a37b11b80ac4640d9e2a658c4e615151",
+        "tables/monte_carlo_statistics.csv": "7637994341ba3ce6b46ba734d3e34132b243e164f9475b4370b052b726240eee",
+        "tables/processed/normalized_trades.csv": "87ff031b35593348b48f95b93cffbaad5cd2821ef6d3a8b1552f10ce644981ef",
+        "strategy/MAESTRO-X_v1.0.pine": "a4e94a39fdf2806db07b0142ad8a014ad1f60ea76efcead4c648e6ae744e0bc6"
+      },
+      "output_hashes": {
+        "tables/parameter_sensitivity.csv": "207eaedea58a0f12de666a8c40841df52975bdf4f295f08027a2a319e76b7ca6",
+        "figures/parameter_surface.png": "0278b603782483049781ecfaafae7445e17e4b861262383a2f05f6f8bd1c6994",
+        "reports/sensitivity_report.html": "08eb1c1fdf462d70b0a0b56d7d47b78ccf43a9a257de4dca677f0745ad11f3ed"
+      }
+    },
+    "reporting": {
+      "status": "completed",
+      "report": "reports/research_report.md",
+      "future_profitability_claimed": false
+    }
+  },
+  "artifacts": [
+    {
+      "path": "tables/processed/trades_1m.csv",
+      "media_type": "text/csv",
+      "size_bytes": 22134,
+      "sha256": "8504218e5b160676e0518bbab89df823b784554709c0544f41c4a7caa26ff5a7",
+      "tabular_schema": "maestro_x_normalized_trade_dataset"
+    },
+    {
+      "path": "tables/processed/trades_5m.csv",
+      "media_type": "text/csv",
+      "size_bytes": 22313,
+      "sha256": "a04ce502819819039bc263976704c9a6d2f63780571427cbe740d0502eadf720",
+      "tabular_schema": "maestro_x_normalized_trade_dataset"
+    },
+    {
+      "path": "tables/processed/trades_15m.csv",
+      "media_type": "text/csv",
+      "size_bytes": 11364,
+      "sha256": "a6c400a545e4a67679b228b89e5b08a4f55f8154477559a6342cc15f05108ef8",
+      "tabular_schema": "maestro_x_normalized_trade_dataset"
+    },
+    {
+      "path": "tables/processed/trades_30m.csv",
+      "media_type": "text/csv",
+      "size_bytes": 10585,
+      "sha256": "449bc9cea0b417cd6a912b30579b2f6deef6651f04258649cc4103dd1e8a00e9",
+      "tabular_schema": "maestro_x_normalized_trade_dataset"
+    },
+    {
+      "path": "tables/processed/trades_1h.csv",
+      "media_type": "text/csv",
+      "size_bytes": 22278,
+      "sha256": "8a0499b57c766a464351cc4edecdc9a43e5fffe7de522e7712d6324a27f1abe0",
+      "tabular_schema": "maestro_x_normalized_trade_dataset"
+    },
+    {
+      "path": "tables/processed/trades_2h.csv",
+      "media_type": "text/csv",
+      "size_bytes": 10512,
+      "sha256": "1cf99c70106b6a6562111a8e9e1ade8ecdc203d106aaae0ee24546c0adbf4e95",
+      "tabular_schema": "maestro_x_normalized_trade_dataset"
+    },
+    {
+      "path": "tables/processed/trades_4h.csv",
+      "media_type": "text/csv",
+      "size_bytes": 10211,
+      "sha256": "c8a770b2f2cce15a295405374f14bb780bd83551d039aadcb7c396c6a551fbec",
+      "tabular_schema": "maestro_x_normalized_trade_dataset"
+    },
+    {
+      "path": "tables/processed/trades_1d.csv",
+      "media_type": "text/csv",
+      "size_bytes": 10066,
+      "sha256": "f1f46f1c06ef2379ec4dc4c4298d7420f4e4c6de7dd2eef6ee5cedc1bb0990ff",
+      "tabular_schema": "maestro_x_normalized_trade_dataset"
+    },
+    {
+      "path": "tables/processed/normalized_trades.csv",
+      "media_type": "text/csv",
+      "size_bytes": 115865,
+      "sha256": "87ff031b35593348b48f95b93cffbaad5cd2821ef6d3a8b1552f10ce644981ef",
+      "tabular_schema": "maestro_x_normalized_trade_dataset"
+    },
+    {
+      "path": "tables/processed/rejected_trades.csv",
+      "media_type": "text/csv",
+      "size_bytes": 1822,
+      "sha256": "7dba90952cef13bc45003ec953b2eb66a8f485a9f18c4edb576d34395555c376"
+    },
+    {
+      "path": "tables/processed_dataset_summary.csv",
+      "media_type": "text/csv",
+      "size_bytes": 2317,
+      "sha256": "6126b22ad92da0acf066d4efc718af8b2277554cb753eaad67e3f1bd4cd90f48"
+    },
+    {
+      "path": "tables/performance_metrics.csv",
+      "media_type": "text/csv",
+      "size_bytes": 5378,
+      "sha256": "2c4d5d547d0600d0398c25d31a23baf2a37b11b80ac4640d9e2a658c4e615151",
+      "tabular_schema": "maestro_x_performance_metrics"
+    },
+    {
+      "path": "tables/monte_carlo_statistics.csv",
+      "media_type": "text/csv",
+      "size_bytes": 14611,
+      "sha256": "7637994341ba3ce6b46ba734d3e34132b243e164f9475b4370b052b726240eee"
+    },
+    {
+      "path": "tables/parameter_sensitivity.csv",
+      "media_type": "text/csv",
+      "size_bytes": 10712,
+      "sha256": "207eaedea58a0f12de666a8c40841df52975bdf4f295f08027a2a319e76b7ca6"
+    },
+    {
+      "path": "figures/equity_curve.png",
+      "media_type": "image/png",
+      "size_bytes": 553970,
+      "sha256": "7767f6a9faf8017439d2a18ab97cd3c1d124f196a1d17fb556a2229a74eedb1a"
+    },
+    {
+      "path": "figures/monte_carlo_distribution.png",
+      "media_type": "image/png",
+      "size_bytes": 394991,
+      "sha256": "3819906f94be3899b36e31d4d9747213e1a5394ed93c021204a90c04beb89ffa"
+    },
+    {
+      "path": "figures/parameter_surface.png",
+      "media_type": "image/png",
+      "size_bytes": 284475,
+      "sha256": "0278b603782483049781ecfaafae7445e17e4b861262383a2f05f6f8bd1c6994"
+    },
+    {
+      "path": "reports/preprocessing_report.json",
+      "media_type": "application/json",
+      "size_bytes": 24058,
+      "sha256": "2f4c173d615db8495f0ee4d73aaa9dea7f6f5d924ec4b93320d2fd183d58fae7"
+    },
+    {
+      "path": "reports/monte_carlo_report.html",
+      "media_type": "text/html",
+      "size_bytes": 542509,
+      "sha256": "a04ae860eba0acb09bb11f23ca2bc1a6f787dbfe6e9f4599ee27405f2b666f6b"
+    },
+    {
+      "path": "reports/sensitivity_report.html",
+      "media_type": "text/html",
+      "size_bytes": 389722,
+      "sha256": "08eb1c1fdf462d70b0a0b56d7d47b78ccf43a9a257de4dca677f0745ad11f3ed"
+    },
+    {
+      "path": "reports/research_report.md",
+      "media_type": "text/markdown",
+      "size_bytes": 2152,
+      "sha256": "0003fb8f5ee76b8d1545e4d060c588d6c74761ac3e228fc99c3c750b6f31ed6e"
+    }
+  ],
+  "limitations": [
+    "Processed trades are observed target-segment rows, not complete TradingView backtests.",
+    "Initial-capital provenance conflicts with the immutable Pine declaration.",
+    "Timeframe samples are not controlled for identical periods or completeness.",
+    "HTF Bias Timeframe and Minimum Entry Score lack controlled outcome grids.",
+    "Monte Carlo results are conditional resampling diagnostics, not future-profit forecasts.",
+    "Publication claims remain blocked pending complete provenance and controlled experiments."
+  ]
+}

@@ -1,0 +1,45 @@
+project:
+  name: MAESTRO-X Research
+  version: v1.0
+
+asset:
+  symbol: XAUUSD
+  market: Gold Spot
+
+strategy:
+  name: MAESTRO-X
+  version: v1.0
+  language: Pine Script v5
+
+platform:
+  name: TradingView
+  engine: Strategy Tester
+
+dataset:
+  type: trade_log
+  source: TradingView Export
+  timeframes:
+    - 1m
+    - 5m
+    - 15m
+    - 30m
+    - 1h
+    - 2h
+    - 4h
+    - 1D
+
+backtest:
+  initial_capital: 40 USD
+  commission: 0
+  slippage: not_configured
+
+research:
+  purpose:
+    - performance_validation
+    - robustness_testing
+    - monte_carlo_analysis
+    - parameter_sensitivity
+    - walk_forward_validation
+
+created:
+  date: 2026-08-22

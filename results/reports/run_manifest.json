@@ -1,0 +1,196 @@
+{
+  "schema_version": "1.0",
+  "pipeline_command": "python -m src.run_pipeline",
+  "monte_carlo_simulations_per_timeframe": 10000,
+  "base_random_seed": 20260822,
+  "strategy": {
+    "path": "strategy/MAESTRO-X_v1.0.pine",
+    "sha256": "a4e94a39fdf2806db07b0142ad8a014ad1f60ea76efcead4c648e6ae744e0bc6",
+    "modified_by_pipeline": false
+  },
+  "raw_sources": [
+    {
+      "timeframe": "1m",
+      "path": "data/raw/trades/tf1menit.csv",
+      "size_bytes": 12574,
+      "sha256": "2ea89b322c420a6fbb936c4a0ba7e8d05c900e7833b0daef1609cc31234bc50a",
+      "modified_by_pipeline": false
+    },
+    {
+      "timeframe": "5m",
+      "path": "data/raw/trades/tf5menit.csv",
+      "size_bytes": 12614,
+      "sha256": "c77cdfa91e8bd553dd0be8ed2968ed82693794f16c5acba1c7237f3601b80e68",
+      "modified_by_pipeline": false
+    },
+    {
+      "timeframe": "15m",
+      "path": "data/raw/trades/tf15menit.csv",
+      "size_bytes": 18564,
+      "sha256": "16667494626d0e37fd2f0fc38dba67bd153d8100da83871ac9c3bc8fd36bd479",
+      "modified_by_pipeline": false
+    },
+    {
+      "timeframe": "30m",
+      "path": "data/raw/trades/tf30menit.csv",
+      "size_bytes": 24131,
+      "sha256": "87d2ec3e5dc3a131d686bf64fbb49c03056726bfbac715f4867d0c4500d2d7aa",
+      "modified_by_pipeline": false
+    },
+    {
+      "timeframe": "1h",
+      "path": "data/raw/trades/tf1jam.csv",
+      "size_bytes": 12517,
+      "sha256": "54b744781136c5182a7cc0172abab263421198ed6da7806bfed89b426c4eade2",
+      "modified_by_pipeline": false
+    },
+    {
+      "timeframe": "2h",
+      "path": "data/raw/trades/tf2jam.csv",
+      "size_bytes": 29653,
+      "sha256": "0d8b770a962ec816734400ea3ea5feef0b15812f3050a34418df3768471ff999",
+      "modified_by_pipeline": false
+    },
+    {
+      "timeframe": "4h",
+      "path": "data/raw/trades/tf4jam.csv",
+      "size_bytes": 36564,
+      "sha256": "813f1d143a9f63415a67c627edeecd50e0cb1d421eeca9e28d91e5209a554ab5",
+      "modified_by_pipeline": false
+    },
+    {
+      "timeframe": "1D",
+      "path": "data/raw/trades/tf1hari.csv",
+      "size_bytes": 41796,
+      "sha256": "cd586bb6be299ed9490eafc816f970e8ecced562494858264e5934ee9c43390d",
+      "modified_by_pipeline": false
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "results/figures/equity_curve.png",
+      "size_bytes": 553970,
+      "sha256": "7767f6a9faf8017439d2a18ab97cd3c1d124f196a1d17fb556a2229a74eedb1a"
+    },
+    {
+      "path": "results/figures/equity_curves.png",
+      "size_bytes": 395283,
+      "sha256": "09f25e590bcb77042730560eb9a982c4bfe0d79979d7ed710051ccd1c2880367"
+    },
+    {
+      "path": "results/figures/monte_carlo_distribution.png",
+      "size_bytes": 394991,
+      "sha256": "3819906f94be3899b36e31d4d9747213e1a5394ed93c021204a90c04beb89ffa"
+    },
+    {
+      "path": "results/figures/monte_carlo_drawdown_distribution.png",
+      "size_bytes": 219922,
+      "sha256": "86da5b78594c07a4b98e49664a05fc5242701e583409ccef5f05858b69d17aab"
+    },
+    {
+      "path": "results/figures/parameter_surface.png",
+      "size_bytes": 284475,
+      "sha256": "0278b603782483049781ecfaafae7445e17e4b861262383a2f05f6f8bd1c6994"
+    },
+    {
+      "path": "results/figures/performance_overview.png",
+      "size_bytes": 104398,
+      "sha256": "7e9d46896e4201148ccc48b9e8d8c4d96e67f724a5f77da170bd4bdc73de5159"
+    },
+    {
+      "path": "results/figures/timeframe_sensitivity_heatmap.png",
+      "size_bytes": 105112,
+      "sha256": "4592ff04c03d33f1391bb75e61b5d7df2e77c543a03cb249dd8408d5f745d35a"
+    },
+    {
+      "path": "results/reports/data_validation.json",
+      "size_bytes": 27016,
+      "sha256": "cdbc82fb1ade052d903fb17dd25a72bff3ebf22434b338af980cdc41002f3c6a"
+    },
+    {
+      "path": "results/reports/data_validation_report.json",
+      "size_bytes": 76853,
+      "sha256": "de73a68e67098f5745395eccedc6cae7fe6eeb6aa10509179992f9acc8c857eb"
+    },
+    {
+      "path": "results/reports/methodology.md",
+      "size_bytes": 3548,
+      "sha256": "b2ef71b458c2470b3870185f354bd12807060ad7d887f62a8edb4c535b759bad"
+    },
+    {
+      "path": "results/reports/monte_carlo_report.html",
+      "size_bytes": 4552,
+      "sha256": "c66014606ed6aa6d0d2678d91e2650f4c511376724c27df71b330016e5e108a7"
+    },
+    {
+      "path": "results/reports/preprocessing_report.json",
+      "size_bytes": 24044,
+      "sha256": "d4e98fc4ec8a0ae85adfbd134adc28156ce0626a3be12f3715427eb83679edc4"
+    },
+    {
+      "path": "results/reports/research_report.html",
+      "size_bytes": 6289,
+      "sha256": "0daf3cea2c80cd4178169d5867c1a0512d696e0d4de0fae5b3c55b0adece2ca0"
+    },
+    {
+      "path": "results/reports/research_summary.md",
+      "size_bytes": 22449,
+      "sha256": "212099727becd45459be071c247257c16060c2129b17ceaa4a6e519cafb30ee9"
+    },
+    {
+      "path": "results/reports/robustness_discussion.md",
+      "size_bytes": 2099,
+      "sha256": "c55e11402f16b62602386e530981383066f76f1ab0a20098abe71fcb7faf56d6"
+    },
+    {
+      "path": "results/reports/sensitivity_report.html",
+      "size_bytes": 389736,
+      "sha256": "49300ca07f7639df8ba79f8a8090ad6c5b671a3dc9da717a4df61c57bae21cb6"
+    },
+    {
+      "path": "results/tables/dataset_summary.csv",
+      "size_bytes": 7957,
+      "sha256": "8acc98f9a0ff313fad18486196829155b5c029bbc3bbcf1a4ccdf15574840b37"
+    },
+    {
+      "path": "results/tables/equity_curve.csv",
+      "size_bytes": 35878,
+      "sha256": "89a32f940e960b45a4a9b3fa71460f2457040b95521d162b4c5641ca05757e1e"
+    },
+    {
+      "path": "results/tables/monte_carlo_metrics.csv",
+      "size_bytes": 6790,
+      "sha256": "f2463a061701a8033f5b08c42623ec666a3b5f8416ddec4d4cfd6422728babdc"
+    },
+    {
+      "path": "results/tables/monte_carlo_statistics.csv",
+      "size_bytes": 14611,
+      "sha256": "7637994341ba3ce6b46ba734d3e34132b243e164f9475b4370b052b726240eee"
+    },
+    {
+      "path": "results/tables/normalized_trades.csv",
+      "size_bytes": 63167,
+      "sha256": "d2a3c635544ac9dcc10d2329b77195b206ba1c66c1d294921608987559d4a797"
+    },
+    {
+      "path": "results/tables/parameter_sensitivity.csv",
+      "size_bytes": 10712,
+      "sha256": "207eaedea58a0f12de666a8c40841df52975bdf4f295f08027a2a319e76b7ca6"
+    },
+    {
+      "path": "results/tables/performance_metrics.csv",
+      "size_bytes": 2323,
+      "sha256": "ee7771a2b1c17289cf9e488f81c125e10f0c52dd5a1649ef6fa70d37bf024222"
+    },
+    {
+      "path": "results/tables/processed_dataset_summary.csv",
+      "size_bytes": 2301,
+      "sha256": "82c17ba8a0305880275765fa794a67c33fa7197a8cd92c8f8bb492f042fd388a"
+    },
+    {
+      "path": "results/tables/sensitivity_table.csv",
+      "size_bytes": 2289,
+      "sha256": "795df5fc3cee6ae70b5b645d2e46bdb0e743fe6bfa3e905de9caa66eb0a973d8"
+    }
+  ]
+}

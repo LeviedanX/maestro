@@ -1,0 +1,14 @@
+{
+  "repository_ready": true,
+  "tests_passed": true,
+  "pipeline_reproducible": true,
+  "remaining_risks": [
+    "TradingView exports remain incomplete, cumulative, and non-comparable across timeframe samples.",
+    "Initial-capital and execution-cost provenance remain incomplete or conflicted.",
+    "Controlled parameter grids, OOS/walk-forward validation, cost stress, and cross-feed replication are unavailable.",
+    "Runtime TradingView compile and A/B equivalence have not been executed for the current Pine hash.",
+    "English month-name locale parsing and cross-platform figure-byte determinism are not validated.",
+    "No transitive dependency lock with package hashes or cross-platform CI matrix exists.",
+    "The project directory is not an independent Git root; the detected Git root is the user home directory."
+  ]
+}

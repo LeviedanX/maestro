@@ -1,0 +1,1554 @@
+//@version=5
+strategy("MAESTRO-X v1.0 | Quantitative Trading Engine", overlay=true, calc_on_every_tick=true, calc_on_order_fills=false, process_orders_on_close=false, initial_capital=10000, pyramiding=0, max_boxes_count=300, max_lines_count=300, max_labels_count=300, max_bars_back=3000, backtest_fill_limits_assumption=0, use_bar_magnifier=false, fill_orders_on_standard_ohlc=true)
+
+// ============================================================================
+// SECTION 00 — PROJECT METADATA
+// ============================================================================
+
+// Project: MAESTRO-X v1.0
+// Expanded name: Multi-layer Adaptive Execution & Signal Technology Optimization
+//                Engine - XAU/USD
+// System name: MAESTRO-X Quantitative Trading Engine
+// Language: Pine Script v5
+// Research asset: XAU/USD; execution remains symbol-agnostic through syminfo.
+// Research timeframes: intraday profiles 1m, 5m, 15m, 30m, and 1h, with a
+// confirmed higher-timeframe context selected from 60m, 240m, or daily data.
+
+// Research hypothesis:
+// A deterministic fusion of session context, volatility normalization, confirmed
+// market structure, higher-timeframe agreement, market-efficiency classification,
+// and bounded risk controls can improve signal selectivity relative to the primary
+// six-point signal-quality baseline without replacing that baseline.
+
+// Module definition: Dynamic Volatility Adaptive Envelope (DVAE).
+
+// Mathematical intuition:
+// 1. DVAE deviation = base deviation * ATR(7) / SMA(ATR(7), 50).
+// 2. Multi-factor quality is a bounded weighted sum of primary quality, macro
+//    location, HTF agreement, regime quality, structure confluence, momentum, and
+//    session quality, less deterministic inefficiency/conflict penalties.
+// 3. Position quantity = risk capital / (price risk * instrument point value).
+// 4. Adaptive stops retain the original R-multiple, break-even, trailing, partial
+//    target, momentum, regime, and time-stop transition semantics.
+
+// Behavior-preservation contract:
+// - strategy declaration properties are frozen;
+// - all input defaults, bounds, options, thresholds, weights, and lookbacks are frozen;
+// - calculation/state-update order and every strategy order expression are frozen;
+// - confirmed HTF offsets and lookahead policy are frozen;
+// - presentation terminology and internal identifiers may change only by bijection.
+
+// Execution caveat:
+// Confirmed Close is the reproducible default. Aggressive Intrabar is forward-only
+// because historical bars do not contain the full realtime tick path.
+
+// Developer notes:
+// The layout follows logical section ownership while retaining dependency-ordered
+// evaluation. Some numbered subsections therefore appear at their data dependency
+// checkpoint rather than being moved across stateful calculations.
+
+// Warning: Backtest result != future guarantee. Results depend on data vendor,
+// symbol mapping, timeframe, spread, commission, slippage, and fill assumptions.
+
+// ============================================================================
+// SECTION 01 — INPUT CONFIGURATION
+// Inputs are centralized so parameter provenance can be reproduced,
+// reviewed, and exported without searching downstream calculations.
+// ============================================================================
+GROUP_SETUP = "00 — Setup Preset & Compatibility"
+setupPresetInput = input.string("Primary Baseline", "Setup Preset", options=["Primary Baseline", "Session Filtered", "Realistic Market Test", "30m Candidate", "Multi-Factor Adaptive", "Multi-Factor Conservative", "Multi-Factor Balanced", "Multi-Factor Aggressive", "Custom"], group=GROUP_SETUP)
+customEngineInput = input.string("Primary", "Engine (Custom)", options=["Primary", "Multi-Factor"], group=GROUP_SETUP)
+timeframeProfileInput = input.string("Auto", "Timeframe Profile", options=["Auto", "1m", "5m", "15m", "30m", "1h", "Custom"], group=GROUP_SETUP)
+signalConfirmationInput = input.string("Confirmed Close", "Signal Confirmation", options=["Confirmed Close", "Aggressive Intrabar"], group=GROUP_SETUP, tooltip="Confirmed Close is non-repainting default. Aggressive Intrabar is forward-only and not historically reproducible.")
+
+GROUP_EXECUTION = "01 — Execution"
+customEntryModeInput = input.string("Limit@Close", "Entry Mode (Custom)", options=["Limit@Close", "Market Next Bar"], group=GROUP_EXECUTION)
+allowLongInput = input.bool(true, "Enable Long", group=GROUP_EXECUTION)
+allowShortInput = input.bool(true, "Enable Short", group=GROUP_EXECUTION)
+customSessionGateInput = input.bool(false, "Use Session Gate (Custom)", group=GROUP_EXECUTION)
+skipConflictingSignalsInput = input.bool(false, "Skip Long/Short Conflict", group=GROUP_EXECUTION)
+multiFactorFlatOnlyInput = input.bool(true, "Multi-Factor: Enter Only When Flat", group=GROUP_EXECUTION)
+pendingOrderExpiryInput = input.int(2, "Multi-Factor Limit Expiry (bars)", minval=1, maxval=20, group=GROUP_EXECUTION)
+backtestModeInput = input.string("Baseline Compatibility", "Backtest Mode", options=["Baseline Compatibility", "Realistic", "Stress Test"], group=GROUP_EXECUTION, tooltip="Costs are configured in Strategy Properties. Stress mode adds an adverse price/RR proxy; it cannot dynamically change TradingView's commission/slippage declaration.")
+stressBufferAtrInput = input.float(0.05, "Stress Cost Proxy (ATR)", minval=0.0, maxval=0.5, step=0.01, group=GROUP_EXECUTION)
+
+GROUP_POSITION_MANAGEMENT = "02 — Exit Engine"
+customExitModeInput = input.string("Baseline ATR Trail", "Exit Mode (Custom)", options=["Baseline ATR Trail", "Fixed ATR", "BreakEven", "DelayedTrail", "BreakEvenDelayedTrail", "Adaptive ATR", "Structure Stop", "BreakEven+", "Partial TP Simulation", "Regime Trail", "Momentum Exit", "Hybrid Adaptive Exit"], group=GROUP_POSITION_MANAGEMENT)
+breakEvenActivationRInput = input.float(1.0, "Break-even Activation (R)", minval=0.2, maxval=5.0, step=0.1, group=GROUP_POSITION_MANAGEMENT)
+breakEvenBufferAtrInput = input.float(0.05, "Break-even Buffer (ATR)", minval=0.0, maxval=0.5, step=0.01, group=GROUP_POSITION_MANAGEMENT)
+trailActivationRInput = input.float(1.5, "Trail Activation (R)", minval=0.5, maxval=6.0, step=0.1, group=GROUP_POSITION_MANAGEMENT)
+trailAtrMultiplierInput = input.float(1.0, "Trail ATR Multiplier", minval=0.2, maxval=5.0, step=0.1, group=GROUP_POSITION_MANAGEMENT)
+partialTargetRInput = input.float(1.0, "Partial TP1 (R)", minval=0.3, maxval=5.0, step=0.1, group=GROUP_POSITION_MANAGEMENT)
+partialTargetPercentInput = input.float(50.0, "Partial TP1 Quantity (%)", minval=10.0, maxval=90.0, step=5.0, group=GROUP_POSITION_MANAGEMENT)
+runnerTargetRInput = input.float(2.5, "Runner Target (R)", minval=1.0, maxval=10.0, step=0.1, group=GROUP_POSITION_MANAGEMENT)
+
+GROUP_VALIDATION = "03 — Validation Modes"
+customHigherTimeframeModeInput = input.string("Off", "HTF Bias Mode (Custom)", options=["Off", "Advisory", "Gate", "Soft Gate", "Hard Gate"], group=GROUP_VALIDATION)
+customRegimeModeInput = input.string("Off", "Regime Mode (Custom)", options=["Off", "Advisory", "Gate", "Soft Gate", "Hard Gate"], group=GROUP_VALIDATION)
+customStructureModeInput = input.string("Off", "Market Structure Mode (Custom)", options=["Off", "Advisory", "Weighted", "Gate"], group=GROUP_VALIDATION)
+customTimeStopModeInput = input.string("Off", "Time Stop (Custom)", options=["Off", "On"], group=GROUP_VALIDATION)
+maxBarsInTradeInput = input.int(120, "Max Bars In Trade", minval=5, maxval=2000, group=GROUP_VALIDATION)
+
+GROUP_HIGHER_TIMEFRAME = "04 — Higher-Timeframe Context"
+higherTimeframeInput = input.string("60", "HTF Bias Timeframe", options=["60", "240", "D"], group=GROUP_HIGHER_TIMEFRAME)
+higherTimeframeTrendLengthInput = input.int(50, "HTF EMA/ALMA Length", minval=10, maxval=300, group=GROUP_HIGHER_TIMEFRAME)
+higherTimeframeStructureLookbackInput = input.int(10, "HTF Structure Lookback", minval=3, maxval=50, group=GROUP_HIGHER_TIMEFRAME)
+
+GROUP_MARKET_EFFICIENCY = "05 — Market Efficiency / Regime"
+adxLengthInput = input.int(14, "ADX Length", minval=5, maxval=50, group=GROUP_MARKET_EFFICIENCY)
+regimePercentileLookbackInput = input.int(100, "Percentile Lookback", minval=50, maxval=300, group=GROUP_MARKET_EFFICIENCY)
+directionalEfficiencyLengthInput = input.int(12, "Directional Efficiency Length", minval=5, maxval=40, group=GROUP_MARKET_EFFICIENCY)
+marketInefficiencyLookbackInput = input.int(10, "Market Inefficiency Observation Bars", minval=5, maxval=30, group=GROUP_MARKET_EFFICIENCY)
+maxInefficiencySoftInput = input.float(68.0, "Soft-Gate Max Inefficiency", minval=40, maxval=95, step=1, group=GROUP_MARKET_EFFICIENCY)
+maxInefficiencyHardInput = input.float(55.0, "Hard-Gate Max Inefficiency", minval=30, maxval=85, step=1, group=GROUP_MARKET_EFFICIENCY)
+postSpikeInstabilityBarsInput = input.int(3, "Post-Spike Unstable Bars", minval=1, maxval=10, group=GROUP_MARKET_EFFICIENCY)
+baselineMinimumAdxInput = input.float(12.0, "Primary Gate: Minimum ADX", minval=0, maxval=100, step=0.5, group=GROUP_MARKET_EFFICIENCY)
+baselineMinimumAtrRankInput = input.float(20.0, "Primary Gate: Minimum ATR Rank", minval=0, maxval=100, step=1, group=GROUP_MARKET_EFFICIENCY)
+baselineMaximumAtrRankInput = input.float(95.0, "Primary Gate: Maximum ATR Rank", minval=0, maxval=100, step=1, group=GROUP_MARKET_EFFICIENCY)
+
+GROUP_MARKET_STRUCTURE = "06 — Market Structure Confluence"
+structurePivotLeftInput = input.int(5, "Confirmed Pivot Left", minval=2, maxval=20, group=GROUP_MARKET_STRUCTURE)
+structurePivotRightInput = input.int(2, "Confirmed Pivot Right", minval=1, maxval=10, group=GROUP_MARKET_STRUCTURE)
+orderBlockLookbackInput = input.int(10, "Order Block Search", minval=3, maxval=30, group=GROUP_MARKET_STRUCTURE)
+minimumStructureGateInput = input.float(55.0, "Market Structure Gate Minimum", minval=30, maxval=90, step=1, group=GROUP_MARKET_STRUCTURE)
+showStructureBreaksInput = input.bool(true, "Show Confirmed MSS/BOS", group=GROUP_MARKET_STRUCTURE)
+
+GROUP_SIGNAL_QUALITY = "07 — Multi-Factor Signal Quality"
+customValidThresholdInput = input.float(68, "VALID Threshold (Custom)", minval=50, maxval=85, step=1, group=GROUP_SIGNAL_QUALITY)
+customStrongThresholdInput = input.float(78, "STRONG Threshold (Custom)", minval=60, maxval=92, step=1, group=GROUP_SIGNAL_QUALITY)
+customPremiumThresholdInput = input.float(86, "PREMIUM Threshold (Custom)", minval=70, maxval=98, step=1, group=GROUP_SIGNAL_QUALITY)
+maxEntryExtensionAtrInput = input.float(1.8, "Max Entry Extension (ATR)", minval=0.5, maxval=5.0, step=0.1, group=GROUP_SIGNAL_QUALITY)
+maxSignalCandleAtrInput = input.float(2.2, "Max Signal Candle Range (ATR)", minval=1.0, maxval=6.0, step=0.1, group=GROUP_SIGNAL_QUALITY)
+minimumFeasibleRiskRewardInput = input.float(1.35, "Minimum Liquidity-Target RR", minval=0.5, maxval=4.0, step=0.05, group=GROUP_SIGNAL_QUALITY)
+
+GROUP_RISK = "08 — Risk / Circuit Breaker"
+riskModeInput = input.string("Fixed", "Risk Mode (Custom)", options=["Fixed", "Quality Weighted"], group=GROUP_RISK)
+maximumRiskPercentInput = input.float(1.5, "Maximum Risk Cap (%)", minval=0.1, maxval=5.0, step=0.1, group=GROUP_RISK)
+enableLossStreakGuardInput = input.bool(true, "Enable Loss-Streak Guard", group=GROUP_RISK)
+maximumConsecutiveLossesInput = input.int(3, "Max Consecutive Losses", minval=1, maxval=10, group=GROUP_RISK)
+lossPauseBarsInput = input.int(20, "Pause After Loss Streak (bars)", minval=1, maxval=500, group=GROUP_RISK)
+enableDailyDrawdownGuardInput = input.bool(true, "Enable Daily Drawdown Guard", group=GROUP_RISK)
+maximumDailyDrawdownPercentInput = input.float(3.0, "Daily Drawdown Guard (%)", minval=0.5, maxval=20, step=0.25, group=GROUP_RISK)
+
+GROUP_VISUALIZATION = "09 — Visuals"
+visualModeInput = input.string("Trader", "Visual Mode", options=["Minimal", "Trader", "Analyst", "Full Structure"], group=GROUP_VISUALIZATION)
+signalMarkerStyleInput = input.string("Arrow Only", "Signal Marker Style", options=["Arrow Only", "Arrow + Score", "Arrow + Tier"], group=GROUP_VISUALIZATION, tooltip="Arrow Only is the clean default. The score and tier remain available in the dashboard and Data Window.")
+signalLabelDetailInput = input.string("Off", "Signal Textbox Detail", options=["Minimal", "Compact", "Detailed", "Off"], group=GROUP_VISUALIZATION, tooltip="Off removes the large custom entry/SL/TP textbox. TradingView's built-in order labels are controlled from Chart Settings > Trading.")
+maximumHistoricalSignalLabelsInput = input.int(40, "Max Historical Signal Labels", minval=0, maxval=200, group=GROUP_VISUALIZATION)
+maximumHistoricalSignalMarkersInput = input.int(80, "Max Historical Signal Arrows", minval=1, maxval=200, group=GROUP_VISUALIZATION)
+showSetupMarkersInput = input.bool(false, "Show Preliminary Setup Dots", group=GROUP_VISUALIZATION)
+showOpportunityZonesInput = input.bool(true, "Show Opportunity Zones", group=GROUP_VISUALIZATION)
+showExitMarkersInput = input.bool(true, "Show Exit Markers", group=GROUP_VISUALIZATION)
+exitMarkerDetailInput = input.string("Minimal", "Exit Marker Detail", options=["Minimal", "R-Multiple", "Detailed"], group=GROUP_VISUALIZATION)
+showDashboardInput = input.bool(true, "Show Dashboard", group=GROUP_VISUALIZATION)
+dashboardModeInput = input.string("Compact", "Dashboard State", options=["Minimized", "Compact", "Full"], group=GROUP_VISUALIZATION, tooltip="Use Show Dashboard as close/open. Minimized collapses it to three rows.")
+dashboardPositionInput = input.string("Top Right", "Dashboard Position", options=["Top Left", "Top Center", "Top Right", "Middle Left", "Middle Center", "Middle Right", "Bottom Left", "Bottom Center", "Bottom Right"], group=GROUP_VISUALIZATION)
+dashboardTextSizeInput = input.string("Readable", "Dashboard Text Size", options=["Compact", "Readable", "Large"], group=GROUP_VISUALIZATION)
+dashboardWidthInput = input.string("Wide", "Dashboard Width", options=["Auto", "Wide", "Extra Wide"], group=GROUP_VISUALIZATION)
+showQuarterOneVisualsInput = input.bool(true, "Show Q1 Box/Lines", group=GROUP_VISUALIZATION)
+showPrimaryFvgInput = input.bool(true, "Show Primary FVG", group=GROUP_VISUALIZATION)
+showBandsInput = input.bool(true, "Show BB / ALMA / Adaptive Bands", group=GROUP_VISUALIZATION)
+showLiquidityRejectionArrowsInput = input.bool(true, "Show Liquidity Rejection Arrows", group=GROUP_VISUALIZATION)
+
+GROUP_ALERTS = "10 — Alerts / Webhook"
+alertSetupInput = input.bool(false, "Alert SETUP", group=GROUP_ALERTS)
+alertConfirmedInput = input.bool(true, "Alert CONFIRMED", group=GROUP_ALERTS)
+alertEntryInput = input.bool(true, "Alert ENTRY / EXECUTE", group=GROUP_ALERTS)
+alertExitInput = input.bool(true, "Alert EXIT", group=GROUP_ALERTS)
+alertTakeProfitInput = input.bool(true, "Alert TP", group=GROUP_ALERTS)
+alertStopLossInput = input.bool(true, "Alert SL", group=GROUP_ALERTS)
+
+GROUP_DIAGNOSTICS = "11 — Diagnostics"
+closeOnInvalidFillRiskInput = input.bool(false, "Primary Custom: Close On Invalid Fill Risk", group=GROUP_DIAGNOSTICS)
+showRejectedSignalsInput = input.bool(false, "Show Rejected Primary Signals", group=GROUP_DIAGNOSTICS)
+
+
+
+GROUP_PRIMARY_CORE = "12 — Primary Signal Core"
+activeSessionInput = input.session("0200-1700", title="Active Session (NY Time)", group="12 — Primary Signal Core")
+bollingerLengthInput = input.int(20, "BB Length", minval=2, group=GROUP_PRIMARY_CORE)
+bollingerDeviationInput = input.float(2.0, "BB Dev", minval=0.1, step=0.1, group=GROUP_PRIMARY_CORE)
+
+GROUP_PRIMARY_QUALITY = "13 — Primary Signal Quality / Risk"
+macroTrendLengthInput = input.int(100, "ALMA Macro Trend Length", minval=10, maxval=500, group=GROUP_PRIMARY_QUALITY)
+dvaeBaseDeviationInput = input.float(1.8, "DVAE Base Deviation Threshold", minval=0.1, maxval=10, step=0.1, group=GROUP_PRIMARY_QUALITY)
+velocityLengthInput = input.int(14, "Velocity Period", minval=4, maxval=100, group=GROUP_PRIMARY_QUALITY)
+stopAtrMultiplierInput = input.float(1.5, "Stop Loss (ATR)", minval=0.1, maxval=10, step=0.1, group=GROUP_PRIMARY_QUALITY)
+targetAtrMultiplierInput = input.float(3.0, "Take Profit (ATR)", minval=0.1, maxval=20, step=0.1, group=GROUP_PRIMARY_QUALITY)
+baseRiskPercentInput = input.float(1.5, "Base Risk per Trade (%)", minval=0.1, maxval=10, step=0.1, group=GROUP_PRIMARY_QUALITY)
+useBaselineTrailingInput = input.bool(true, "Use Baseline Trailing Stop", group=GROUP_PRIMARY_QUALITY)
+baseCooldownBarsInput = input.int(5, "Base Cooldown Bars", minval=0, maxval=500, group=GROUP_PRIMARY_QUALITY)
+useAdaptiveEnvelopeFilterInput = input.bool(false, "Use Adaptive Envelope Filter", group=GROUP_PRIMARY_QUALITY)
+minimumPrimaryScoreInput = input.int(4, "Minimum Entry Score (Max 6)", minval=2, maxval=6, group=GROUP_PRIMARY_QUALITY)
+
+// ============================================================================
+// SECTION 02 — CONSTANTS, ENUM-LIKE IDENTIFIERS & SHARED FUNCTIONS
+// ============================================================================
+// /*
+// Centralized invariants prevent semantic drift across modules. String constants
+// act as Pine v5 enum-like identifiers; their literal values preserve the input
+// contract. Utility functions only bound, normalize, or format existing values.
+// */
+
+int DIRECTION_LONG = 1
+int DIRECTION_SHORT = -1
+int DIRECTION_NEUTRAL = 0
+float SAFE_DIVISION_EPSILON = 1e-10
+string ENGINE_PRIMARY = "Primary"
+string ENGINE_MULTI_FACTOR = "Multi-Factor"
+
+// A deterministic bound protects composite scores from scale excursions.
+
+// Bounding is required because heterogeneous feature scales feed shared thresholds.
+clampValue(float x, float lo, float hi) => math.max(lo, math.min(hi, x))
+// Explicit fallback prevents undefined ratios from contaminating persistent state.
+safeDivide(float n, float d, float fallback) => na(d) or math.abs(d) <= SAFE_DIVISION_EPSILON ? fallback : n / d
+booleanScore(bool cond) => cond ? 100.0 : 0.0
+directionLabel(int dir) => dir == DIRECTION_LONG ? "BULL" : dir == DIRECTION_SHORT ? "BEAR" : "NEUTRAL"
+// A stable profile mapping keeps timeframe-dependent controls deterministic.
+resolveTimeframeProfile() =>
+    float sec = timeframe.in_seconds()
+    sec <= 60 ? "1m" : sec <= 300 ? "5m" : sec <= 900 ? "15m" : sec <= 1800 ? "30m" : "1h"
+
+bool multiFactorPreset = setupPresetInput == "Multi-Factor Adaptive" or setupPresetInput == "Multi-Factor Conservative" or setupPresetInput == "Multi-Factor Balanced" or setupPresetInput == "Multi-Factor Aggressive"
+bool customPreset = setupPresetInput == "Custom"
+string effectiveEngine = customPreset ? customEngineInput : multiFactorPreset ? ENGINE_MULTI_FACTOR : ENGINE_PRIMARY
+bool multiFactorEngine = effectiveEngine == ENGINE_MULTI_FACTOR
+string effectiveProfile = timeframeProfileInput == "Auto" ? resolveTimeframeProfile() : timeframeProfileInput
+string effectiveEntryMode = customPreset ? customEntryModeInput : setupPresetInput == "Realistic Market Test" or multiFactorPreset ? "Market Next Bar" : "Limit@Close"
+string effectiveExitMode = customPreset ? customExitModeInput : multiFactorPreset ? "Hybrid Adaptive Exit" : "Baseline ATR Trail"
+bool effectiveSessionGate = customPreset ? customSessionGateInput : setupPresetInput == "Session Filtered" or setupPresetInput == "30m Candidate"
+string effectiveHigherTimeframeMode = customPreset ? customHigherTimeframeModeInput : setupPresetInput == "Multi-Factor Conservative" ? "Hard Gate" : multiFactorPreset ? "Soft Gate" : "Off"
+string effectiveRegimeMode = customPreset ? customRegimeModeInput : setupPresetInput == "Multi-Factor Conservative" ? "Hard Gate" : multiFactorPreset ? "Soft Gate" : "Off"
+string effectiveStructureMode = customPreset ? customStructureModeInput : setupPresetInput == "Multi-Factor Conservative" ? "Gate" : multiFactorPreset ? "Weighted" : "Off"
+string effectiveTimeStopMode = customPreset ? customTimeStopModeInput : multiFactorPreset ? "On" : "Off"
+string effectiveRiskMode = customPreset ? riskModeInput : multiFactorPreset ? "Quality Weighted" : "Fixed"
+float validQualityThreshold = customPreset ? customValidThresholdInput : setupPresetInput == "Multi-Factor Conservative" ? 74 : setupPresetInput == "Multi-Factor Aggressive" ? 62 : 68
+float strongQualityThreshold = customPreset ? customStrongThresholdInput : setupPresetInput == "Multi-Factor Conservative" ? 84 : setupPresetInput == "Multi-Factor Aggressive" ? 74 : 78
+float premiumQualityThreshold = customPreset ? customPremiumThresholdInput : setupPresetInput == "Multi-Factor Conservative" ? 91 : setupPresetInput == "Multi-Factor Aggressive" ? 84 : 86
+int profileCooldownAdjustment = effectiveProfile == "1m" ? 3 : effectiveProfile == "5m" ? 1 : effectiveProfile == "15m" ? 0 : effectiveProfile == "30m" ? -1 : -2
+int profileMaximumBars = effectiveProfile == "1m" ? 180 : effectiveProfile == "5m" ? 120 : effectiveProfile == "15m" ? 72 : effectiveProfile == "30m" ? 48 : 30
+int effectiveMaximumBarsInTrade = customPreset or effectiveProfile == "Custom" ? maxBarsInTradeInput : profileMaximumBars
+float chartTimeframeSeconds = timeframe.in_seconds()
+string requestedHigherTimeframe = effectiveProfile == "1h" ? "240" : higherTimeframeInput
+string safeHigherTimeframeFallback = chartTimeframeSeconds < 3600 ? "60" : chartTimeframeSeconds < 14400 ? "240" : chartTimeframeSeconds < 86400 ? "D" : chartTimeframeSeconds < 604800 ? "W" : "3M"
+string effectiveHigherTimeframe = not na(chartTimeframeSeconds) and timeframe.in_seconds(requestedHigherTimeframe) > chartTimeframeSeconds ? requestedHigherTimeframe : safeHigherTimeframeFallback
+bool higherTimeframeValid = not na(chartTimeframeSeconds) and timeframe.in_seconds(effectiveHigherTimeframe) > chartTimeframeSeconds
+bool confirmedSignalMode = signalConfirmationInput == "Confirmed Close" or not multiFactorEngine
+bool signalCalculationAllowed = confirmedSignalMode ? barstate.isconfirmed : true
+bool standardChart = chart.is_standard
+
+// ============================================================================
+// SECTION 03.1 — SESSION & TIME ENGINE
+// New York local time anchors the quarter model because liquidity
+// behavior is session-dependent; the original 5.5-hour window and
+// 90-minute quarter boundaries remain unchanged.
+// ============================================================================
+bool inSession = not na(time(timeframe.period, activeSessionInput, "America/New_York"))
+var bool prevInSession = false
+bool newSession = inSession and not prevInSession
+if barstate.isconfirmed
+    prevInSession := inSession
+
+var int sessionStartTime = na
+if newSession
+    sessionStartTime := time
+float sessionElapsedSeconds = na(sessionStartTime) ? na : (time - sessionStartTime) / 1000
+bool isQ1 = inSession and not na(sessionElapsedSeconds) and sessionElapsedSeconds >= 0 and sessionElapsedSeconds < 5400
+bool isQ2 = inSession and not na(sessionElapsedSeconds) and sessionElapsedSeconds >= 5400 and sessionElapsedSeconds < 10800
+bool isQ3 = inSession and not na(sessionElapsedSeconds) and sessionElapsedSeconds >= 10800 and sessionElapsedSeconds < 16200
+bool isQ4 = inSession and not na(sessionElapsedSeconds) and sessionElapsedSeconds >= 16200
+
+var float q1High = na
+var float q1Low = na
+if newSession
+    q1High := high
+    q1Low := low
+if isQ1
+    q1High := math.max(nz(q1High, high), high)
+    q1Low := math.min(nz(q1Low, low), low)
+
+var box q1RangeBox = na
+var line q1HighLine = na
+var line q1LowLine = na
+var int q1StartBar = na
+var int q1EndBar = na
+if newSession
+    q1StartBar := bar_index
+    q1EndBar := na
+    if not na(q1RangeBox)
+        box.delete(q1RangeBox)
+        q1RangeBox := na
+    if not na(q1HighLine)
+        line.delete(q1HighLine)
+        q1HighLine := na
+    if not na(q1LowLine)
+        line.delete(q1LowLine)
+        q1LowLine := na
+if isQ1
+    q1EndBar := bar_index
+if showQuarterOneVisualsInput and isQ1 and not na(q1StartBar) and not na(q1High) and not na(q1Low)
+    if na(q1RangeBox)
+        q1RangeBox := box.new(q1StartBar, q1High, bar_index, q1Low, border_color=color.new(color.blue, 40), bgcolor=color.new(color.blue, 85), border_width=1)
+    else
+        box.set_top(q1RangeBox, q1High)
+        box.set_bottom(q1RangeBox, q1Low)
+        box.set_right(q1RangeBox, bar_index)
+bool postQuarterOne = inSession and not isQ1 and not na(q1High) and not na(q1Low) and not na(q1EndBar)
+if showQuarterOneVisualsInput and postQuarterOne
+    if na(q1HighLine)
+        q1HighLine := line.new(q1EndBar, q1High, bar_index, q1High, color=color.red, style=line.style_dotted, width=2)
+        q1LowLine := line.new(q1EndBar, q1Low, bar_index, q1Low, color=color.blue, style=line.style_dotted, width=2)
+    line.set_x2(q1HighLine, bar_index)
+    line.set_x2(q1LowLine, bar_index)
+
+bool inAsia = not na(time(timeframe.period, "2000-0000", "America/New_York"))
+bool inLondon = not na(time(timeframe.period, "0200-0500", "America/New_York"))
+bool inOverlap = not na(time(timeframe.period, "0800-1100", "America/New_York"))
+bool inNewYork = not na(time(timeframe.period, "0700-1200", "America/New_York"))
+string sessionName = inOverlap ? "LONDON/NY" : inLondon ? "LONDON" : inNewYork ? "NEW YORK" : inAsia ? "ASIA" : "OFF-SESSION"
+
+// ============================================================================
+// SECTION 04.1 — SESSION LIQUIDITY STRUCTURE
+// Quarter-range sweeps are retained as observable liquidity events;
+// their purpose is contextual confirmation, not causal price claims.
+// ============================================================================
+float basis = ta.sma(close, bollingerLengthInput)
+float bbStdev = ta.stdev(close, bollingerLengthInput)
+float upperBB = basis + bollingerDeviationInput * bbStdev
+float lowerBB = basis - bollingerDeviationInput * bbStdev
+bool isSweepHigh = not na(q1High) and high > q1High
+bool isSweepLow = not na(q1Low) and low < q1Low
+bool upperVolatilityExtreme = high > upperBB
+bool lowerVolatilityExtreme = low < lowerBB
+bool isRejectionBearish = not na(q1High) and close < q1High and close < open
+bool isRejectionBullish = not na(q1Low) and close > q1Low and close > open
+bool validBearishLiquidityRejection = (isQ2 or isQ3) and isSweepHigh and upperVolatilityExtreme and isRejectionBearish
+bool validBullishLiquidityRejection = (isQ2 or isQ3) and isSweepLow and lowerVolatilityExtreme and isRejectionBullish
+bool bearishLiquidityRejectionConfirmed = validBearishLiquidityRejection and barstate.isconfirmed
+bool bullishLiquidityRejectionConfirmed = validBullishLiquidityRejection and barstate.isconfirmed
+
+// ============================================================================
+// SECTION 04.2 — IMBALANCE LIFECYCLE ENGINE
+// Confirmed gaps are bounded by age and object caps to preserve memory
+// safety while retaining the original mitigation semantics.
+// ============================================================================
+float referenceAtr = ta.atr(14)
+var int barsSinceBullishLiquidityRejection = na
+var int barsSinceBearishLiquidityRejection = na
+if barstate.isconfirmed
+    if bullishLiquidityRejectionConfirmed
+        barsSinceBullishLiquidityRejection := 0
+    else if not na(barsSinceBullishLiquidityRejection)
+        barsSinceBullishLiquidityRejection += 1
+    if bearishLiquidityRejectionConfirmed
+        barsSinceBearishLiquidityRejection := 0
+    else if not na(barsSinceBearishLiquidityRejection)
+        barsSinceBearishLiquidityRejection += 1
+
+bool bullFVGFormed = barstate.isconfirmed and not na(barsSinceBullishLiquidityRejection) and barsSinceBullishLiquidityRejection <= 10 and low > high[2] and close[1] > open[1] and (close[1] - open[1]) / math.max(high[1] - low[1], syminfo.mintick) > 0.5 and low - high[2] > referenceAtr * 0.15
+bool bearFVGFormed = barstate.isconfirmed and not na(barsSinceBearishLiquidityRejection) and barsSinceBearishLiquidityRejection <= 10 and high < low[2] and close[1] < open[1] and (open[1] - close[1]) / math.max(high[1] - low[1], syminfo.mintick) > 0.5 and low[2] - high > referenceAtr * 0.15
+if bullFVGFormed
+    barsSinceBullishLiquidityRejection := na
+if bearFVGFormed
+    barsSinceBearishLiquidityRejection := na
+
+var box[] activeBullFVGs = array.new_box()
+var box[] activeBearFVGs = array.new_box()
+var int[] bullFVGBirthBar = array.new_int()
+var int[] bearFVGBirthBar = array.new_int()
+if bullFVGFormed
+    if array.size(activeBullFVGs) >= 10
+        box.delete(array.shift(activeBullFVGs))
+        array.shift(bullFVGBirthBar)
+    array.push(activeBullFVGs, box.new(bar_index[2], low, bar_index, high[2], border_color=showPrimaryFvgInput ? color.new(color.green, 30) : color.new(color.green, 100), bgcolor=showPrimaryFvgInput ? color.new(color.green, 80) : color.new(color.green, 100), border_width=1))
+    array.push(bullFVGBirthBar, bar_index)
+if bearFVGFormed
+    if array.size(activeBearFVGs) >= 10
+        box.delete(array.shift(activeBearFVGs))
+        array.shift(bearFVGBirthBar)
+    array.push(activeBearFVGs, box.new(bar_index[2], low[2], bar_index, high, border_color=showPrimaryFvgInput ? color.new(color.red, 30) : color.new(color.red, 100), bgcolor=showPrimaryFvgInput ? color.new(color.red, 80) : color.new(color.red, 100), border_width=1))
+    array.push(bearFVGBirthBar, bar_index)
+
+bool isInsideBullishFVG = false
+bool isInsideBearishFVG = false
+if array.size(activeBullFVGs) > 0
+    int i = array.size(activeBullFVGs) - 1
+    while i >= 0
+        box id = array.get(activeBullFVGs, i)
+        int birthBar = array.get(bullFVGBirthBar, i)
+        int fvgAge = bar_index - birthBar
+        float fvgTop = box.get_top(id)
+        float fvgBottom = box.get_bottom(id)
+        if barstate.isconfirmed and (fvgAge > 40 or (close < fvgBottom and close[1] < fvgBottom))
+            box.delete(id)
+            array.remove(activeBullFVGs, i)
+            array.remove(bullFVGBirthBar, i)
+        else
+            box.set_right(id, bar_index)
+            if low <= fvgTop
+                isInsideBullishFVG := true
+        i -= 1
+if array.size(activeBearFVGs) > 0
+    int j = array.size(activeBearFVGs) - 1
+    while j >= 0
+        box id = array.get(activeBearFVGs, j)
+        int birthBar = array.get(bearFVGBirthBar, j)
+        int fvgAge = bar_index - birthBar
+        float fvgTop = box.get_top(id)
+        float fvgBottom = box.get_bottom(id)
+        if barstate.isconfirmed and (fvgAge > 40 or (close > fvgTop and close[1] > fvgTop))
+            box.delete(id)
+            array.remove(activeBearFVGs, j)
+            array.remove(bearFVGBirthBar, j)
+        else
+            box.set_right(id, bar_index)
+            if high >= fvgBottom
+                isInsideBearishFVG := true
+        j -= 1
+
+// ============================================================================
+// SECTION 05.1 — DYNAMIC VOLATILITY ADAPTIVE ENVELOPE (DVAE)
+// ATR-ratio scaling adapts the envelope width to local volatility so
+// the primary signal-quality baseline is not tied to a fixed deviation.
+// ============================================================================
+float macroTrend = ta.alma(close, macroTrendLengthInput, 0.85, 6)
+bool isMacroBull = close > macroTrend
+bool isMacroBear = close < macroTrend
+float atrFast = ta.atr(7)
+float atrSlow = ta.sma(atrFast, 50)
+float atrVolatilityRatio = atrSlow == 0 ? 1.0 : atrFast / atrSlow
+float adaptiveDeviationMultiplier = dvaeBaseDeviationInput * atrVolatilityRatio
+int halfLength = int(math.floor(velocityLengthInput / 2))
+int sqrtLength = int(math.round(math.sqrt(velocityLengthInput)))
+float halfLengthWeightedAverage = ta.wma(close, halfLength)
+float fullLengthWeightedAverage = ta.wma(close, velocityLengthInput)
+float zeroLag = ta.wma(2 * halfLengthWeightedAverage - fullLengthWeightedAverage, sqrtLength)
+float dvaeUpperBand = zeroLag + ta.stdev(close, velocityLengthInput) * adaptiveDeviationMultiplier
+float dvaeLowerBand = zeroLag - ta.stdev(close, velocityLengthInput) * adaptiveDeviationMultiplier
+float slDist = atrFast * stopAtrMultiplierInput
+float tpDist = atrFast * targetAtrMultiplierInput
+float volThreshold = ta.percentile_linear_interpolation(ta.atr(14), 100, 70)
+bool elevatedVolatility = ta.atr(14) > volThreshold
+bool bullishRejection = close > open and close > (high + low) / 2
+bool bearishRejection = close < open and close < (high + low) / 2
+bool adaptiveEnvelopeLongPass = useAdaptiveEnvelopeFilterInput ? low <= dvaeLowerBand and close > dvaeLowerBand : true
+bool adaptiveEnvelopeShortPass = useAdaptiveEnvelopeFilterInput ? high >= dvaeUpperBand and close < dvaeUpperBand : true
+int primaryBullScore = 0
+if isInsideBullishFVG
+    primaryBullScore += 2
+if bullishRejection
+    primaryBullScore += 1
+if isMacroBull
+    primaryBullScore += 1
+if elevatedVolatility
+    primaryBullScore += 1
+if adaptiveEnvelopeLongPass
+    primaryBullScore += 1
+int primaryBearScore = 0
+if isInsideBearishFVG
+    primaryBearScore += 2
+if bearishRejection
+    primaryBearScore += 1
+if isMacroBear
+    primaryBearScore += 1
+if elevatedVolatility
+    primaryBearScore += 1
+if adaptiveEnvelopeShortPass
+    primaryBearScore += 1
+bool primaryLongSignal = primaryBullScore >= minimumPrimaryScoreInput
+bool primaryShortSignal = primaryBearScore >= minimumPrimaryScoreInput
+
+// ============================================================================
+// SECTION 05.2 / 07.1 — VOLATILITY FEATURES & EFFICIENCY REGIME
+// Normalized volatility, directional efficiency, slope, and alternation
+// features exist to reject structurally inefficient market conditions.
+// ============================================================================
+[dmiPlus, dmiMinus, adxVal] = ta.dmi(adxLengthInput, adxLengthInput)
+float atrRank = ta.percentrank(referenceAtr, regimePercentileLookbackInput)
+float normalizedATR = safeDivide(referenceAtr, close, 0.0) * 100
+int slopeLen = 5
+float macroSlopeN = safeDivide(macroTrend - macroTrend[slopeLen], referenceAtr * slopeLen, 0.0)
+float zeroSlopeN = safeDivide(zeroLag - zeroLag[slopeLen], referenceAtr * slopeLen, 0.0)
+float efficiencyDen = math.sum(math.abs(ta.change(close)), directionalEfficiencyLengthInput)
+float directionalEfficiency = clampValue(safeDivide(math.abs(close - close[directionalEfficiencyLengthInput]), efficiencyDen, 0.0) * 100, 0, 100)
+float bbBandwidth = safeDivide(upperBB - lowerBB, math.abs(basis), 0.0) * 100
+float bbBandwidthRank = ta.percentrank(bbBandwidth, regimePercentileLookbackInput)
+float adxQuality = clampValue((adxVal - 10) / 25 * 100, 0, 100)
+float macroUpQuality = clampValue(50 + macroSlopeN * 220, 0, 100)
+float macroDnQuality = clampValue(50 - macroSlopeN * 220, 0, 100)
+float zeroUpQuality = clampValue(50 + zeroSlopeN * 250, 0, 100)
+float zeroDnQuality = clampValue(50 - zeroSlopeN * 250, 0, 100)
+float diLongQuality = clampValue(50 + safeDivide(dmiPlus - dmiMinus, math.max(dmiPlus + dmiMinus, 1.0), 0.0) * 100, 0, 100)
+float diShortQuality = 100 - diLongQuality
+float priceLongLocation = clampValue(50 + safeDivide(close - macroTrend, referenceAtr, 0.0) * 25, 0, 100)
+float priceShortLocation = 100 - priceLongLocation
+float trendUpScore = clampValue(adxQuality * 0.22 + directionalEfficiency * 0.20 + macroUpQuality * 0.20 + zeroUpQuality * 0.18 + diLongQuality * 0.12 + priceLongLocation * 0.08, 0, 100)
+float trendDownScore = clampValue(adxQuality * 0.22 + directionalEfficiency * 0.20 + macroDnQuality * 0.20 + zeroDnQuality * 0.18 + diShortQuality * 0.12 + priceShortLocation * 0.08, 0, 100)
+float volatilityQuality = clampValue(100 - math.abs(atrRank - 58) * 1.65, 0, 100)
+bool compression = bbBandwidthRank < 22 and atrRank < 35
+bool expansion = bbBandwidthRank > 72 and atrRank > 65
+bool highVolatility = atrRank > 92
+bool lowVolatility = atrRank < 15
+float candleRangeATR = safeDivide(high - low, referenceAtr, 0.0)
+bool volatilitySpike = candleRangeATR > 2.8 or (atrRank > 96 and math.abs(close - open) > referenceAtr * 1.8)
+int barsSinceSpike = nz(ta.barssince(volatilitySpike), 10000)
+bool postSpikeUnstable = barsSinceSpike <= postSpikeInstabilityBarsInput
+float alternatingRate = math.sum((close > open) != (close[1] > open[1]) ? 1.0 : 0.0, marketInefficiencyLookbackInput) / marketInefficiencyLookbackInput * 100
+float baselineCrossRate = math.sum((close > macroTrend) != (close[1] > macroTrend[1]) ? 1.0 : 0.0, marketInefficiencyLookbackInput) / marketInefficiencyLookbackInput * 100
+float flatMacroPenalty = clampValue(100 - math.abs(macroSlopeN) * 800, 0, 100)
+float flatZeroPenalty = clampValue(100 - math.abs(zeroSlopeN) * 900, 0, 100)
+float marketInefficiencyScore = clampValue((100 - adxQuality) * 0.20 + (100 - directionalEfficiency) * 0.22 + flatMacroPenalty * 0.14 + flatZeroPenalty * 0.14 + alternatingRate * 0.12 + baselineCrossRate * 0.10 + (compression ? 100 : 0) * 0.08 + (postSpikeUnstable ? 15 : 0), 0, 100)
+float regimeScore = clampValue(math.max(trendUpScore, trendDownScore) * 0.55 + volatilityQuality * 0.25 + (expansion ? 90 : compression ? 20 : 60) * 0.20, 0, 100)
+bool transitionRegime = not compression and not highVolatility and ((macroSlopeN > 0 and zeroSlopeN < 0) or (macroSlopeN < 0 and zeroSlopeN > 0) or math.abs(trendUpScore - trendDownScore) < 8)
+string regimeName = compression ? "COMPRESSION" : highVolatility ? "HIGH_VOLATILITY" : expansion ? "EXPANSION" : lowVolatility ? "LOW_VOLATILITY" : transitionRegime ? "TRANSITION" : trendUpScore >= 62 and trendUpScore > trendDownScore + 8 ? "TREND_UP" : trendDownScore >= 62 and trendDownScore > trendUpScore + 8 ? "TREND_DOWN" : "RANGE"
+int regimeCode = regimeName == "TREND_UP" ? 1 : regimeName == "TREND_DOWN" ? -1 : regimeName == "RANGE" ? 2 : regimeName == "COMPRESSION" ? 3 : regimeName == "EXPANSION" ? 4 : regimeName == "HIGH_VOLATILITY" ? 5 : regimeName == "LOW_VOLATILITY" ? 6 : 7
+
+float sessionVolQuality = clampValue(100 - math.abs(atrRank - 58) * 1.4, 0, 100)
+float sessionQuality = clampValue(35 + sessionVolQuality * 0.45 + (inSession ? 15 : 0) + (inOverlap ? 5 : 0) - (postSpikeUnstable ? 15 : 0), 0, 100)
+
+// ============================================================================
+// SECTION 03.2 / 07.2 — CONFIRMED HIGHER-TIMEFRAME CONTEXT
+// One-bar offsets with lookahead_on intentionally trade timeliness for
+// historical/realtime consistency and avoidance of future leakage.
+// The [1]/[2] offsets plus lookahead_on return only confirmed HTF values.
+// ============================================================================
+[htfClose1, htfAlma1, htfAlma2, htfEma1, htfEma2, htfRangeHigh, htfRangeLow] = request.security(syminfo.tickerid, effectiveHigherTimeframe, [close[1], ta.alma(close, higherTimeframeTrendLengthInput, 0.85, 6)[1], ta.alma(close, higherTimeframeTrendLengthInput, 0.85, 6)[2], ta.ema(close, higherTimeframeTrendLengthInput)[1], ta.ema(close, higherTimeframeTrendLengthInput)[2], ta.highest(high, higherTimeframeStructureLookbackInput)[2], ta.lowest(low, higherTimeframeStructureLookbackInput)[2]], lookahead=barmerge.lookahead_on)
+bool htfSlopeBull = not na(htfAlma1) and not na(htfAlma2) and htfAlma1 > htfAlma2 and htfEma1 >= htfEma2
+bool htfSlopeBear = not na(htfAlma1) and not na(htfAlma2) and htfAlma1 < htfAlma2 and htfEma1 <= htfEma2
+bool htfLocationBull = not na(htfClose1) and htfClose1 > htfAlma1 and htfClose1 > htfEma1
+bool htfLocationBear = not na(htfClose1) and htfClose1 < htfAlma1 and htfClose1 < htfEma1
+bool htfStructureBull = not na(htfRangeHigh) and htfClose1 > htfRangeHigh
+bool htfStructureBear = not na(htfRangeLow) and htfClose1 < htfRangeLow
+int htfBiasCode = htfSlopeBull and htfLocationBull ? 1 : htfSlopeBear and htfLocationBear ? -1 : 0
+float htfLongAgreement = clampValue((htfSlopeBull ? 40 : htfSlopeBear ? 0 : 20) + (htfLocationBull ? 35 : htfLocationBear ? 0 : 17.5) + (htfStructureBull ? 25 : htfStructureBear ? 0 : 12.5), 0, 100)
+float htfShortAgreement = clampValue((htfSlopeBear ? 40 : htfSlopeBull ? 0 : 20) + (htfLocationBear ? 35 : htfLocationBull ? 0 : 17.5) + (htfStructureBear ? 25 : htfStructureBull ? 0 : 12.5), 0, 100)
+float htfAgreement = math.max(htfLongAgreement, htfShortAgreement)
+
+// ============================================================================
+// SECTION 04.3 — CONFIRMED MARKET STRUCTURE ENGINE
+// Pivots become actionable only when confirmed; origin bars are retained
+// for audit context but never used to back-date execution.
+// ============================================================================
+// The nearest qualifying origin candle is selected to avoid discretionary zone choice.
+findBullishOrderBlock(int _len) =>
+    float _top = na
+    float _btm = na
+    int _age = na
+    for _k = 1 to _len
+        if na(_age) and close[_k] < open[_k]
+            _top := math.max(open[_k], close[_k])
+            _btm := low[_k]
+            _age := _k
+    [_top, _btm, _age]
+
+// Symmetric selection preserves directional comparability in structure scoring.
+findBearishOrderBlock(int _len) =>
+    float _top = na
+    float _btm = na
+    int _age = na
+    for _k = 1 to _len
+        if na(_age) and close[_k] > open[_k]
+            _top := high[_k]
+            _btm := math.min(open[_k], close[_k])
+            _age := _k
+    [_top, _btm, _age]
+
+float confirmedPivotHigh = ta.pivothigh(high, structurePivotLeftInput, structurePivotRightInput)
+float confirmedPivotLow = ta.pivotlow(low, structurePivotLeftInput, structurePivotRightInput)
+var float lastSwingHigh = na
+var float lastSwingLow = na
+var int lastSwingHighOrigin = na
+var int lastSwingLowOrigin = na
+var int lastSwingHighKnownBar = na
+var int lastSwingLowKnownBar = na
+if barstate.isconfirmed and not na(confirmedPivotHigh)
+    lastSwingHigh := confirmedPivotHigh
+    lastSwingHighOrigin := bar_index - structurePivotRightInput
+    lastSwingHighKnownBar := bar_index
+if barstate.isconfirmed and not na(confirmedPivotLow)
+    lastSwingLow := confirmedPivotLow
+    lastSwingLowOrigin := bar_index - structurePivotRightInput
+    lastSwingLowKnownBar := bar_index
+
+bool bullStructureBreak = barstate.isconfirmed and not na(lastSwingHigh) and bar_index >= nz(lastSwingHighKnownBar, bar_index) and close > lastSwingHigh and close[1] <= lastSwingHigh
+bool bearStructureBreak = barstate.isconfirmed and not na(lastSwingLow) and bar_index >= nz(lastSwingLowKnownBar, bar_index) and close < lastSwingLow and close[1] >= lastSwingLow
+var int marketStructureDirection = 0
+bool bullMSS = bullStructureBreak and marketStructureDirection <= 0
+bool bearMSS = bearStructureBreak and marketStructureDirection >= 0
+bool bullBOS = bullStructureBreak and marketStructureDirection == 1
+bool bearBOS = bearStructureBreak and marketStructureDirection == -1
+if bullStructureBreak
+    marketStructureDirection := 1
+if bearStructureBreak
+    marketStructureDirection := -1
+
+bool sellsideSweep = barstate.isconfirmed and not na(lastSwingLow) and low < lastSwingLow and close > lastSwingLow
+bool buysideSweep = barstate.isconfirmed and not na(lastSwingHigh) and high > lastSwingHigh and close < lastSwingHigh
+bool displacementBull = close > open and math.abs(close - open) > ta.sma(math.abs(close - open), 20) * 1.25 and candleRangeATR > 0.8 and close >= high - (high - low) * 0.25
+bool displacementBear = close < open and math.abs(close - open) > ta.sma(math.abs(close - open), 20) * 1.25 and candleRangeATR > 0.8 and close <= low + (high - low) * 0.25
+
+[foundBullObTop, foundBullObBottom, foundBullObAge] = findBullishOrderBlock(orderBlockLookbackInput)
+[foundBearObTop, foundBearObBottom, foundBearObAge] = findBearishOrderBlock(orderBlockLookbackInput)
+var float bullObTop = na
+var float bullObBottom = na
+var int bullObOrigin = na
+var bool bullObActive = false
+var bool bullBreakerActive = false
+var float bearObTop = na
+var float bearObBottom = na
+var int bearObOrigin = na
+var bool bearObActive = false
+var bool bearBreakerActive = false
+if bullStructureBreak and not na(foundBullObTop)
+    bullObTop := foundBullObTop
+    bullObBottom := foundBullObBottom
+    bullObOrigin := bar_index - foundBullObAge
+    bullObActive := true
+    bullBreakerActive := false
+if bearStructureBreak and not na(foundBearObTop)
+    bearObTop := foundBearObTop
+    bearObBottom := foundBearObBottom
+    bearObOrigin := bar_index - foundBearObAge
+    bearObActive := true
+    bearBreakerActive := false
+if barstate.isconfirmed and bullObActive and close < bullObBottom
+    bullObActive := false
+    bullBreakerActive := true
+if barstate.isconfirmed and bearObActive and close > bearObTop
+    bearObActive := false
+    bearBreakerActive := true
+bool inBullOB = bullObActive and low <= bullObTop and high >= bullObBottom
+bool inBearOB = bearObActive and high >= bearObBottom and low <= bearObTop
+bool inBullBreaker = bearBreakerActive and low <= bearObTop and high >= bearObBottom
+bool inBearBreaker = bullBreakerActive and high >= bullObBottom and low <= bullObTop
+
+bool marketStructureBullFvgFormed = barstate.isconfirmed and low > high[2] and displacementBull[1]
+bool marketStructureBearFvgFormed = barstate.isconfirmed and high < low[2] and displacementBear[1]
+var float marketStructureBullFvgTop = na
+var float marketStructureBullFvgBottom = na
+var int marketStructureBullFvgOrigin = na
+var bool marketStructureBullFvgActive = false
+var bool marketStructureBullIfvgActive = false
+var float marketStructureBearFvgTop = na
+var float marketStructureBearFvgBottom = na
+var int marketStructureBearFvgOrigin = na
+var bool marketStructureBearFvgActive = false
+var bool marketStructureBearIfvgActive = false
+if marketStructureBullFvgFormed
+    marketStructureBullFvgTop := low
+    marketStructureBullFvgBottom := high[2]
+    marketStructureBullFvgOrigin := bar_index - 2
+    marketStructureBullFvgActive := true
+    marketStructureBullIfvgActive := false
+if marketStructureBearFvgFormed
+    marketStructureBearFvgTop := low[2]
+    marketStructureBearFvgBottom := high
+    marketStructureBearFvgOrigin := bar_index - 2
+    marketStructureBearFvgActive := true
+    marketStructureBearIfvgActive := false
+if barstate.isconfirmed and marketStructureBullFvgActive and close < marketStructureBullFvgBottom
+    marketStructureBullFvgActive := false
+    marketStructureBullIfvgActive := true
+if barstate.isconfirmed and marketStructureBearFvgActive and close > marketStructureBearFvgTop
+    marketStructureBearFvgActive := false
+    marketStructureBearIfvgActive := true
+bool inMarketStructureBullFvg = marketStructureBullFvgActive and low <= marketStructureBullFvgTop and high >= marketStructureBullFvgBottom
+bool inMarketStructureBearFvg = marketStructureBearFvgActive and high >= marketStructureBearFvgBottom and low <= marketStructureBearFvgTop
+bool inBullIFVG = marketStructureBearIfvgActive and low <= marketStructureBearFvgTop and high >= marketStructureBearFvgBottom
+bool inBearIFVG = marketStructureBullIfvgActive and high >= marketStructureBullFvgBottom and low <= marketStructureBullFvgTop
+bool bprActive = marketStructureBullFvgActive and marketStructureBearFvgActive and math.max(marketStructureBullFvgBottom, marketStructureBearFvgBottom) < math.min(marketStructureBullFvgTop, marketStructureBearFvgTop)
+float bprTop = bprActive ? math.min(marketStructureBullFvgTop, marketStructureBearFvgTop) : na
+float bprBottom = bprActive ? math.max(marketStructureBullFvgBottom, marketStructureBearFvgBottom) : na
+bool inBPR = bprActive and low <= bprTop and high >= bprBottom
+
+bool bullVolumeImbalance = open > close[1] and high[1] > low and close > close[1] and open > open[1] and high[1] < math.min(open, close)
+bool bearVolumeImbalance = open < close[1] and low[1] < high and close < close[1] and open < open[1] and low[1] > math.max(open, close)
+var float fridayClose = na
+var float nwogTop = na
+var float nwogBottom = na
+var float ndogTop = na
+var float ndogBottom = na
+bool newDay = ta.change(time("D")) != 0
+bool newWeek = ta.change(time("W")) != 0
+if barstate.isconfirmed and dayofweek == dayofweek.friday
+    fridayClose := close
+if barstate.isconfirmed and newWeek and dayofweek == dayofweek.monday and not na(fridayClose)
+    nwogTop := math.max(fridayClose, open)
+    nwogBottom := math.min(fridayClose, open)
+if barstate.isconfirmed and newDay
+    ndogTop := math.max(close[1], open)
+    ndogBottom := math.min(close[1], open)
+bool inNWOG = not na(nwogTop) and low <= nwogTop and high >= nwogBottom
+bool inNDOG = not na(ndogTop) and low <= ndogTop and high >= ndogBottom
+
+bool bullStructureRecent = marketStructureDirection == 1 or nz(ta.barssince(bullMSS or bullBOS), 10000) <= 8
+bool bearStructureRecent = marketStructureDirection == -1 or nz(ta.barssince(bearMSS or bearBOS), 10000) <= 8
+bool sellsideSweepRecent = nz(ta.barssince(sellsideSweep), 10000) <= 5
+bool buysideSweepRecent = nz(ta.barssince(buysideSweep), 10000) <= 5
+bool bullZoneContext = inBullOB or inBullBreaker or inMarketStructureBullFvg or inBullIFVG or inBPR
+bool bearZoneContext = inBearOB or inBearBreaker or inMarketStructureBearFvg or inBearIFVG or inBPR
+float marketStructureBullScore = clampValue((bullStructureRecent ? 25 : 0) + (sellsideSweepRecent ? 25 : 0) + (bullZoneContext ? 20 : 0) + (displacementBull ? 15 : 0) + (bullVolumeImbalance ? 5 : 0) + (inNWOG or inNDOG or inBPR ? 5 : 0) + (inLondon or inNewYork ? 5 : 0), 0, 100)
+float marketStructureBearScore = clampValue((bearStructureRecent ? 25 : 0) + (buysideSweepRecent ? 25 : 0) + (bearZoneContext ? 20 : 0) + (displacementBear ? 15 : 0) + (bearVolumeImbalance ? 5 : 0) + (inNWOG or inNDOG or inBPR ? 5 : 0) + (inLondon or inNewYork ? 5 : 0), 0, 100)
+string marketStructureContext = bullMSS ? "BULL MSS" : bearMSS ? "BEAR MSS" : bullBOS ? "BULL BOS" : bearBOS ? "BEAR BOS" : sellsideSweep ? "SELLSIDE SWEEP" : buysideSweep ? "BUYSIDE SWEEP" : bullZoneContext ? "BULL ZONE" : bearZoneContext ? "BEAR ZONE" : "NEUTRAL"
+
+// ============================================================================
+// SECTION 06 — MULTI-FACTOR SIGNAL FUSION ENGINE
+// Bounded heterogeneous features are fused only after normalization so
+// no component dominates solely because of measurement scale.
+// ============================================================================
+float primaryBullQuality = primaryBullScore / 6.0 * 100
+float primaryBearQuality = primaryBearScore / 6.0 * 100
+float macroBullQuality = clampValue(macroUpQuality * 0.55 + priceLongLocation * 0.45, 0, 100)
+float macroBearQuality = clampValue(macroDnQuality * 0.55 + priceShortLocation * 0.45, 0, 100)
+float momentumBullQuality = clampValue(zeroUpQuality * 0.45 + (bullishRejection ? 70 : 35) * 0.20 + (displacementBull ? 100 : 30) * 0.25 + diLongQuality * 0.10, 0, 100)
+float momentumBearQuality = clampValue(zeroDnQuality * 0.45 + (bearishRejection ? 70 : 35) * 0.20 + (displacementBear ? 100 : 30) * 0.25 + diShortQuality * 0.10, 0, 100)
+float htfBullComponent = effectiveHigherTimeframeMode == "Off" ? 50 : htfLongAgreement
+float htfBearComponent = effectiveHigherTimeframeMode == "Off" ? 50 : htfShortAgreement
+float regimeBullComponent = effectiveRegimeMode == "Off" ? 50 : trendUpScore * 0.65 + regimeScore * 0.35
+float regimeBearComponent = effectiveRegimeMode == "Off" ? 50 : trendDownScore * 0.65 + regimeScore * 0.35
+float marketStructureBullComponent = effectiveStructureMode == "Weighted" or effectiveStructureMode == "Gate" ? marketStructureBullScore : 50
+float marketStructureBearComponent = effectiveStructureMode == "Weighted" or effectiveStructureMode == "Gate" ? marketStructureBearScore : 50
+float entryExtensionLongATR = clampValue(math.max(safeDivide(close - macroTrend, referenceAtr, 0), safeDivide(close - zeroLag, referenceAtr, 0)), 0, 20)
+float entryExtensionShortATR = clampValue(math.max(safeDivide(macroTrend - close, referenceAtr, 0), safeDivide(zeroLag - close, referenceAtr, 0)), 0, 20)
+bool overextendedLong = entryExtensionLongATR > maxEntryExtensionAtrInput or candleRangeATR > maxSignalCandleAtrInput or postSpikeUnstable
+bool overextendedShort = entryExtensionShortATR > maxEntryExtensionAtrInput or candleRangeATR > maxSignalCandleAtrInput or postSpikeUnstable
+bool primarySignalConflict = primaryLongSignal and primaryShortSignal
+float targetRR = math.max(targetAtrMultiplierInput / math.max(stopAtrMultiplierInput, 0.1), 0.1)
+bool structureStopMode = effectiveExitMode == "Structure Stop" or effectiveExitMode == "Hybrid Adaptive Exit"
+float rawLongStructureDist = not na(lastSwingLow) and lastSwingLow < close ? close - (lastSwingLow - atrFast * 0.10) : slDist
+float rawShortStructureDist = not na(lastSwingHigh) and lastSwingHigh > close ? lastSwingHigh + atrFast * 0.10 - close : slDist
+float longRiskDist = structureStopMode ? clampValue(rawLongStructureDist, slDist * 0.8, atrFast * 3.0) : slDist
+float shortRiskDist = structureStopMode ? clampValue(rawShortStructureDist, slDist * 0.8, atrFast * 3.0) : slDist
+float stressCost = backtestModeInput == "Stress Test" ? atrFast * stressBufferAtrInput : 0.0
+float recommendedLongSL = close - longRiskDist
+float recommendedShortSL = close + shortRiskDist
+float recommendedLongTP = close + longRiskDist * targetRR - stressCost * 2
+float recommendedShortTP = close - shortRiskDist * targetRR + stressCost * 2
+float rrLongAtSignal = safeDivide(recommendedLongTP - close, longRiskDist + stressCost, 0)
+float rrShortAtSignal = safeDivide(close - recommendedShortTP, shortRiskDist + stressCost, 0)
+float rrLongToLiquidity = not na(lastSwingHigh) and lastSwingHigh > close ? safeDivide(lastSwingHigh - close, longRiskDist, targetRR) : targetRR
+float rrShortToLiquidity = not na(lastSwingLow) and lastSwingLow < close ? safeDivide(close - lastSwingLow, shortRiskDist, targetRR) : targetRR
+bool poorRRLong = rrLongToLiquidity < minimumFeasibleRiskRewardInput or rrLongAtSignal < minimumFeasibleRiskRewardInput
+bool poorRRShort = rrShortToLiquidity < minimumFeasibleRiskRewardInput or rrShortAtSignal < minimumFeasibleRiskRewardInput
+float htfLongPenalty = effectiveHigherTimeframeMode == "Off" or htfBiasCode != -1 ? 0 : effectiveHigherTimeframeMode == "Advisory" ? 4 : effectiveHigherTimeframeMode == "Soft Gate" ? 9 : 18
+float htfShortPenalty = effectiveHigherTimeframeMode == "Off" or htfBiasCode != 1 ? 0 : effectiveHigherTimeframeMode == "Advisory" ? 4 : effectiveHigherTimeframeMode == "Soft Gate" ? 9 : 18
+float regimeLongPenalty = regimeName == "TREND_DOWN" ? 12 : regimeName == "COMPRESSION" or regimeName == "RANGE" ? 6 : 0
+float regimeShortPenalty = regimeName == "TREND_UP" ? 12 : regimeName == "COMPRESSION" or regimeName == "RANGE" ? 6 : 0
+float marketInefficiencyPenalty = marketInefficiencyScore * 0.18
+float multiFactorBullScore = clampValue(primaryBullQuality * 0.28 + macroBullQuality * 0.14 + htfBullComponent * 0.15 + regimeBullComponent * 0.14 + marketStructureBullComponent * 0.13 + momentumBullQuality * 0.10 + sessionQuality * 0.06 - marketInefficiencyPenalty - htfLongPenalty - regimeLongPenalty - (overextendedLong ? 15 : 0) - (primarySignalConflict ? 15 : 0), 0, 100)
+float multiFactorBearScore = clampValue(primaryBearQuality * 0.28 + macroBearQuality * 0.14 + htfBearComponent * 0.15 + regimeBearComponent * 0.14 + marketStructureBearComponent * 0.13 + momentumBearQuality * 0.10 + sessionQuality * 0.06 - marketInefficiencyPenalty - htfShortPenalty - regimeShortPenalty - (overextendedShort ? 15 : 0) - (primarySignalConflict ? 15 : 0), 0, 100)
+
+float adaptiveThreshold = validQualityThreshold + (effectiveRegimeMode == "Soft Gate" ? clampValue((marketInefficiencyScore - 50) * 0.15, 0, 7) : 0)
+bool htfHardLongPass = effectiveHigherTimeframeMode != "Hard Gate" or htfBiasCode == 1
+bool htfHardShortPass = effectiveHigherTimeframeMode != "Hard Gate" or htfBiasCode == -1
+bool regimeHardLongPass = effectiveRegimeMode != "Hard Gate" or (marketInefficiencyScore <= maxInefficiencyHardInput and regimeName != "COMPRESSION" and regimeName != "TREND_DOWN" and not postSpikeUnstable)
+bool regimeHardShortPass = effectiveRegimeMode != "Hard Gate" or (marketInefficiencyScore <= maxInefficiencyHardInput and regimeName != "COMPRESSION" and regimeName != "TREND_UP" and not postSpikeUnstable)
+bool regimeSoftPass = effectiveRegimeMode != "Soft Gate" or marketInefficiencyScore <= maxInefficiencySoftInput
+bool marketStructureLongPass = effectiveStructureMode != "Gate" or marketStructureBullScore >= minimumStructureGateInput
+bool marketStructureShortPass = effectiveStructureMode != "Gate" or marketStructureBearScore >= minimumStructureGateInput
+bool sessionLongPass = not effectiveSessionGate or inSession
+bool sessionShortPass = not effectiveSessionGate or inSession
+
+bool qualifiedLong = primaryLongSignal and multiFactorBullScore >= adaptiveThreshold and higherTimeframeValid and htfHardLongPass and regimeHardLongPass and regimeSoftPass and marketStructureLongPass and sessionLongPass and not overextendedLong and not poorRRLong and not primarySignalConflict and standardChart
+bool qualifiedShort = primaryShortSignal and multiFactorBearScore >= adaptiveThreshold and higherTimeframeValid and htfHardShortPass and regimeHardShortPass and regimeSoftPass and marketStructureShortPass and sessionShortPass and not overextendedShort and not poorRRShort and not primarySignalConflict and standardChart
+bool strongLong = qualifiedLong and multiFactorBullScore >= strongQualityThreshold and htfLongAgreement >= 55 and marketInefficiencyScore < 55
+bool strongShort = qualifiedShort and multiFactorBearScore >= strongQualityThreshold and htfShortAgreement >= 55 and marketInefficiencyScore < 55
+bool premiumLong = strongLong and multiFactorBullScore >= premiumQualityThreshold and sellsideSweepRecent and (bullStructureRecent or bullZoneContext) and regimeScore >= 58 and marketInefficiencyScore < 42
+bool premiumShort = strongShort and multiFactorBearScore >= premiumQualityThreshold and buysideSweepRecent and (bearStructureRecent or bearZoneContext) and regimeScore >= 58 and marketInefficiencyScore < 42
+int longTierCode = premiumLong ? 3 : strongLong ? 2 : qualifiedLong ? 1 : 0
+int shortTierCode = premiumShort ? 3 : strongShort ? 2 : qualifiedShort ? 1 : 0
+string longTierText = premiumLong ? "PREMIUM BUY" : strongLong ? "STRONG BUY" : qualifiedLong ? "BUY" : "NO TRADE"
+string shortTierText = premiumShort ? "PREMIUM SELL" : strongShort ? "STRONG SELL" : qualifiedShort ? "SELL" : "NO TRADE"
+
+int rejectedLongReason = not primaryLongSignal ? 0 : not higherTimeframeValid ? 11 : effectiveHigherTimeframeMode == "Hard Gate" and not htfHardLongPass ? 1 : marketInefficiencyScore > (effectiveRegimeMode == "Hard Gate" ? maxInefficiencyHardInput : maxInefficiencySoftInput) ? 2 : lowVolatility ? 3 : overextendedLong ? 4 : not regimeHardLongPass ? 5 : effectiveStructureMode == "Gate" and not marketStructureLongPass ? 6 : primarySignalConflict ? 7 : poorRRLong ? 8 : 0
+int rejectedShortReason = not primaryShortSignal ? 0 : not higherTimeframeValid ? 11 : effectiveHigherTimeframeMode == "Hard Gate" and not htfHardShortPass ? 1 : marketInefficiencyScore > (effectiveRegimeMode == "Hard Gate" ? maxInefficiencyHardInput : maxInefficiencySoftInput) ? 2 : lowVolatility ? 3 : overextendedShort ? 4 : not regimeHardShortPass ? 5 : effectiveStructureMode == "Gate" and not marketStructureShortPass ? 6 : primarySignalConflict ? 7 : poorRRShort ? 8 : 0
+string rejectedReasonText = rejectedLongReason == 11 or rejectedShortReason == 11 ? "HTF TIMEFRAME INVALID" : rejectedLongReason == 1 or rejectedShortReason == 1 ? "HTF CONFLICT" : rejectedLongReason == 2 or rejectedShortReason == 2 ? "LOW MARKET EFFICIENCY" : rejectedLongReason == 3 or rejectedShortReason == 3 ? "VOLATILITY TOO LOW" : rejectedLongReason == 4 or rejectedShortReason == 4 ? "WAIT FOR RETRACE" : rejectedLongReason == 5 or rejectedShortReason == 5 ? "REGIME MISMATCH" : rejectedLongReason == 6 or rejectedShortReason == 6 ? "WEAK MARKET STRUCTURE" : rejectedLongReason == 7 or rejectedShortReason == 7 ? "LONG/SHORT CONFLICT" : rejectedLongReason == 8 or rejectedShortReason == 8 ? "POOR RR" : "READY"
+
+bool setupLong = primaryLongSignal
+bool setupShort = primaryShortSignal
+bool armedLong = setupLong and multiFactorBullScore >= 50 and (bullZoneContext or sellsideSweepRecent or isInsideBullishFVG)
+bool armedShort = setupShort and multiFactorBearScore >= 50 and (bearZoneContext or buysideSweepRecent or isInsideBearishFVG)
+bool confirmedLong = qualifiedLong and signalCalculationAllowed
+bool confirmedShort = qualifiedShort and signalCalculationAllowed
+string setupState = confirmedLong or confirmedShort ? "CONFIRMED" : armedLong or armedShort ? "ARMED" : setupLong or setupShort ? "SETUP" : "IDLE"
+
+// ============================================================================
+// SECTION 07.3 / 08.1 / 09.1 — FILTERS, ENTRY VALIDATION & RISK GUARDS
+// Stateful cooldown and circuit conditions precede order submission to
+// prevent clustered exposure during unstable or loss-streak regimes.
+// ============================================================================
+var float dayStartEquity = strategy.equity
+if barstate.isconfirmed and newDay
+    dayStartEquity := strategy.equity
+float dailyDrawdownPct = dayStartEquity > 0 ? math.max(0, (dayStartEquity - strategy.equity) / dayStartEquity * 100) : 0
+bool dailyGuardHit = enableDailyDrawdownGuardInput and dailyDrawdownPct >= maximumDailyDrawdownPercentInput
+var int consecutiveLosses = 0
+var int pauseUntilBar = na
+bool lossStreakPause = enableLossStreakGuardInput and not na(pauseUntilBar) and bar_index < pauseUntilBar
+bool circuitPaused = dailyGuardHit or lossStreakPause
+
+var int lastExecutedSignalBar = na
+int adaptiveCooldownBars = int(math.max(0, baseCooldownBarsInput + profileCooldownAdjustment + (marketInefficiencyScore > 65 ? 4 : 0) + (consecutiveLosses > 0 ? consecutiveLosses * 2 : 0) + (primarySignalConflict ? 2 : 0) - (math.max(trendUpScore, trendDownScore) > 78 and marketInefficiencyScore < 35 ? 1 : 0)))
+bool multiFactorCooldownReady = na(lastExecutedSignalBar) or bar_index - lastExecutedSignalBar >= adaptiveCooldownBars
+bool multiFactorPositionReady = not multiFactorFlatOnlyInput or strategy.position_size == 0
+bool multiFactorBaseReady = multiFactorCooldownReady and multiFactorPositionReady and not circuitPaused and standardChart
+bool newQualifiedLong = confirmedLong and not qualifiedLong[1]
+bool newQualifiedShort = confirmedShort and not qualifiedShort[1]
+varip int aggressiveOrderBar = na
+if barstate.isnew
+    aggressiveOrderBar := na
+bool aggressiveOrderReady = confirmedSignalMode or na(aggressiveOrderBar) or aggressiveOrderBar != bar_index
+bool multiFactorFireLong = multiFactorEngine and signalCalculationAllowed and newQualifiedLong and multiFactorBaseReady and allowLongInput and aggressiveOrderReady
+bool multiFactorFireShort = multiFactorEngine and signalCalculationAllowed and newQualifiedShort and multiFactorBaseReady and allowShortInput and aggressiveOrderReady
+if multiFactorFireLong or multiFactorFireShort
+    aggressiveOrderBar := bar_index
+
+// Primary advisory computation and exact binary gate path.
+[baselineHtfP1, baselineHtfP2] = request.security(syminfo.tickerid, higherTimeframeInput, [ta.ema(close, higherTimeframeTrendLengthInput)[1], ta.ema(close, higherTimeframeTrendLengthInput)[2]], lookahead=barmerge.lookahead_off)
+bool baselineHtfBull = not na(baselineHtfP1) and not na(baselineHtfP2) and baselineHtfP1 > baselineHtfP2
+bool baselineHtfBear = not na(baselineHtfP1) and not na(baselineHtfP2) and baselineHtfP1 < baselineHtfP2
+bool baselineRegimeOk = adxVal >= baselineMinimumAdxInput and atrRank >= baselineMinimumAtrRankInput and atrRank <= baselineMaximumAtrRankInput
+var int baselineEntryCooldown = 0
+if barstate.isconfirmed
+    baselineEntryCooldown := math.max(0, baselineEntryCooldown - 1)
+bool baselineLongOk = allowLongInput and (not effectiveSessionGate or inSession)
+bool baselineShortOk = allowShortInput and (not effectiveSessionGate or inSession)
+bool baselineHtfGateLong = not (effectiveHigherTimeframeMode == "Gate" or effectiveHigherTimeframeMode == "Hard Gate") or baselineHtfBull
+bool baselineHtfGateShort = not (effectiveHigherTimeframeMode == "Gate" or effectiveHigherTimeframeMode == "Hard Gate") or baselineHtfBear
+bool baselineRegimeGate = not (effectiveRegimeMode == "Gate" or effectiveRegimeMode == "Hard Gate") or baselineRegimeOk
+bool baselineValidLong = not multiFactorEngine and barstate.isconfirmed and primaryLongSignal and baselineEntryCooldown == 0 and baselineLongOk and baselineHtfGateLong and baselineRegimeGate
+bool baselineValidShort = not multiFactorEngine and barstate.isconfirmed and primaryShortSignal and baselineEntryCooldown == 0 and baselineShortOk and baselineHtfGateShort and baselineRegimeGate
+bool baselineConflict = baselineValidLong and baselineValidShort
+bool baselineFireLong = skipConflictingSignalsInput ? baselineValidLong and not baselineValidShort : baselineValidLong
+bool baselineFireShort = skipConflictingSignalsInput ? baselineValidShort and not baselineValidLong : baselineValidShort
+
+bool fireLong = multiFactorEngine ? multiFactorFireLong : baselineFireLong
+bool fireShort = multiFactorEngine ? multiFactorFireShort : baselineFireShort
+bool conflictSig = multiFactorEngine ? primarySignalConflict : baselineConflict
+int executedTierCode = fireLong ? (multiFactorEngine ? longTierCode : 1) : fireShort ? (multiFactorEngine ? shortTierCode : 1) : 0
+float executedQuality = fireLong ? (multiFactorEngine ? multiFactorBullScore : primaryBullQuality) : fireShort ? (multiFactorEngine ? multiFactorBearScore : primaryBearQuality) : na
+string executedTierText = fireLong ? (multiFactorEngine ? longTierText : "BUY") : fireShort ? (multiFactorEngine ? shortTierText : "SELL") : "NONE"
+
+// ============================================================================
+// SECTION 08.2 / 09.2 — ORDER EXECUTION & POSITION SIZING
+// Signal price, intended order price, and actual fill remain separate so
+// execution drift cannot be confused with model signal quality.
+// ============================================================================
+var float referenceStopPrice = na
+var float referenceTargetPrice = na
+var float signalPrice = na
+var float signalSL = na
+var float signalTP = na
+var float intendedEntry = na
+var float pendingLongStop = na
+var float pendingLongTarget = na
+var float pendingShortStop = na
+var float pendingShortTarget = na
+var bool pendingActive = false
+var int pendingSide = 0
+var int pendingSignalBar = na
+var float pendingSignalPrice = na
+var float pendingRiskPct = na
+var float pendingQuality = na
+var int pendingTierCode = 0
+var string pendingSignalId = ""
+var bool pendingEnhanced = false
+bool selectedAdaptiveExit = effectiveExitMode == "BreakEven" or effectiveExitMode == "DelayedTrail" or effectiveExitMode == "BreakEvenDelayedTrail" or effectiveExitMode == "Adaptive ATR" or effectiveExitMode == "BreakEven+" or effectiveExitMode == "Partial TP Simulation" or effectiveExitMode == "Regime Trail" or effectiveExitMode == "Momentum Exit" or effectiveExitMode == "Hybrid Adaptive Exit"
+
+float longRiskMultiplier = longTierCode == 3 ? 1.0 : longTierCode == 2 ? 0.75 : 0.50
+float shortRiskMultiplier = shortTierCode == 3 ? 1.0 : shortTierCode == 2 ? 0.75 : 0.50
+float effectiveLongRiskPct = math.min(maximumRiskPercentInput, effectiveRiskMode == "Quality Weighted" ? baseRiskPercentInput * longRiskMultiplier : baseRiskPercentInput)
+float effectiveShortRiskPct = math.min(maximumRiskPercentInput, effectiveRiskMode == "Quality Weighted" ? baseRiskPercentInput * shortRiskMultiplier : baseRiskPercentInput)
+
+buildSignalId(string _side) => syminfo.ticker + "_" + timeframe.period + "_" + str.tostring(time) + "_" + _side + "_MX10"
+
+if multiFactorEngine and pendingActive and effectiveEntryMode == "Limit@Close" and strategy.position_size == 0 and bar_index - pendingSignalBar > pendingOrderExpiryInput
+    if pendingSide == 1
+        strategy.cancel("MX BUY")
+    else
+        strategy.cancel("MX SELL")
+    pendingActive := false
+    pendingSide := 0
+
+if circuitPaused and multiFactorEngine and pendingActive and strategy.position_size == 0
+    strategy.cancel_all()
+    pendingActive := false
+    pendingSide := 0
+
+if fireLong
+    float thisSL = multiFactorEngine ? recommendedLongSL : close - slDist
+    float thisTP = multiFactorEngine ? recommendedLongTP : close + tpDist
+    float thisRiskPct = multiFactorEngine ? effectiveLongRiskPct : baseRiskPercentInput
+    float thisRiskDist = close - thisSL
+    float riskAmount = strategy.equity * thisRiskPct / 100
+    float qtyLong = thisRiskDist > 0 and syminfo.pointvalue > 0 ? riskAmount / (thisRiskDist * syminfo.pointvalue) : 0
+    referenceStopPrice := thisSL
+    referenceTargetPrice := thisTP
+    signalPrice := close
+    signalSL := thisSL
+    signalTP := thisTP
+    intendedEntry := effectiveEntryMode == "Limit@Close" ? close : na
+    pendingLongStop := thisSL
+    pendingLongTarget := thisTP
+    pendingActive := qtyLong > 0
+    pendingSide := 1
+    pendingSignalBar := bar_index
+    pendingSignalPrice := close
+    pendingRiskPct := thisRiskPct
+    pendingQuality := executedQuality
+    pendingTierCode := executedTierCode
+    pendingSignalId := multiFactorEngine ? buildSignalId("BUY") : syminfo.ticker + "_" + timeframe.period + "_" + str.tostring(bar_index) + "_BUY"
+    pendingEnhanced := multiFactorEngine
+    if qtyLong > 0
+        if multiFactorEngine
+            strategy.cancel("MX SELL")
+        if effectiveEntryMode == "Limit@Close"
+            strategy.entry("MX BUY", strategy.long, qty=qtyLong, limit=close)
+        else
+            strategy.entry("MX BUY", strategy.long, qty=qtyLong)
+        bool baselineDoTrail = not multiFactorEngine and effectiveExitMode == "Baseline ATR Trail" and useBaselineTrailingInput
+        if baselineDoTrail
+            strategy.exit("Exit BUY", "MX BUY", stop=thisSL, limit=thisTP, trail_points=thisRiskDist / syminfo.mintick, trail_offset=thisRiskDist * 0.2 / syminfo.mintick)
+        else if (not multiFactorEngine and not selectedAdaptiveExit) or (multiFactorEngine and (effectiveExitMode == "Fixed ATR" or effectiveExitMode == "Structure Stop"))
+            strategy.exit("Exit BUY", "MX BUY", stop=thisSL, limit=thisTP)
+        else if effectiveExitMode == "Partial TP Simulation" or effectiveExitMode == "Hybrid Adaptive Exit"
+            strategy.exit("TP1 BUY", "MX BUY", stop=thisSL, limit=close + thisRiskDist * partialTargetRInput, qty_percent=partialTargetPercentInput)
+            strategy.exit("RUNNER BUY", "MX BUY", stop=thisSL, limit=close + thisRiskDist * runnerTargetRInput, qty_percent=100 - partialTargetPercentInput)
+        else
+            strategy.exit("Exit BUY", "MX BUY", stop=thisSL, limit=thisTP)
+
+if fireShort
+    float thisSL = multiFactorEngine ? recommendedShortSL : close + slDist
+    float thisTP = multiFactorEngine ? recommendedShortTP : close - tpDist
+    float thisRiskPct = multiFactorEngine ? effectiveShortRiskPct : baseRiskPercentInput
+    float thisRiskDist = thisSL - close
+    float riskAmount = strategy.equity * thisRiskPct / 100
+    float qtyShort = thisRiskDist > 0 and syminfo.pointvalue > 0 ? riskAmount / (thisRiskDist * syminfo.pointvalue) : 0
+    referenceStopPrice := thisSL
+    referenceTargetPrice := thisTP
+    signalPrice := close
+    signalSL := thisSL
+    signalTP := thisTP
+    intendedEntry := effectiveEntryMode == "Limit@Close" ? close : na
+    pendingShortStop := thisSL
+    pendingShortTarget := thisTP
+    pendingActive := qtyShort > 0
+    pendingSide := -1
+    pendingSignalBar := bar_index
+    pendingSignalPrice := close
+    pendingRiskPct := thisRiskPct
+    pendingQuality := executedQuality
+    pendingTierCode := executedTierCode
+    pendingSignalId := multiFactorEngine ? buildSignalId("SELL") : syminfo.ticker + "_" + timeframe.period + "_" + str.tostring(bar_index) + "_SELL"
+    pendingEnhanced := multiFactorEngine
+    if qtyShort > 0
+        if multiFactorEngine
+            strategy.cancel("MX BUY")
+        if effectiveEntryMode == "Limit@Close"
+            strategy.entry("MX SELL", strategy.short, qty=qtyShort, limit=close)
+        else
+            strategy.entry("MX SELL", strategy.short, qty=qtyShort)
+        bool baselineDoTrail = not multiFactorEngine and effectiveExitMode == "Baseline ATR Trail" and useBaselineTrailingInput
+        if baselineDoTrail
+            strategy.exit("Exit SELL", "MX SELL", stop=thisSL, limit=thisTP, trail_points=thisRiskDist / syminfo.mintick, trail_offset=thisRiskDist * 0.2 / syminfo.mintick)
+        else if (not multiFactorEngine and not selectedAdaptiveExit) or (multiFactorEngine and (effectiveExitMode == "Fixed ATR" or effectiveExitMode == "Structure Stop"))
+            strategy.exit("Exit SELL", "MX SELL", stop=thisSL, limit=thisTP)
+        else if effectiveExitMode == "Partial TP Simulation" or effectiveExitMode == "Hybrid Adaptive Exit"
+            strategy.exit("TP1 SELL", "MX SELL", stop=thisSL, limit=close - thisRiskDist * partialTargetRInput, qty_percent=partialTargetPercentInput)
+            strategy.exit("RUNNER SELL", "MX SELL", stop=thisSL, limit=close - thisRiskDist * runnerTargetRInput, qty_percent=100 - partialTargetPercentInput)
+        else
+            strategy.exit("Exit SELL", "MX SELL", stop=thisSL, limit=thisTP)
+
+if fireLong or fireShort
+    if multiFactorEngine
+        lastExecutedSignalBar := bar_index
+    else
+        baselineEntryCooldown := baseCooldownBarsInput
+
+// ============================================================================
+// SECTION 08.3 / 09.3 — ADAPTIVE POSITION MANAGEMENT & RISK STATE
+// Fill-relative R state prevents stop/target management from assuming
+// that the broker emulator filled at the recommendation price.
+// ============================================================================
+bool adaptiveExitEnabled = selectedAdaptiveExit
+var int tradeDir = 0
+var bool tradeEnhanced = false
+var float tradeEntryPrice = na
+var float tradeInitialRisk = na
+var float tradeActiveStop = na
+var float tradeTargetPrice = na
+var float tradePartialTargetPrice = na
+var float tradeRunnerTargetPrice = na
+var int barsInTrade = 0
+var int lastCountedTradeBar = na
+var float actualEntryPrice = na
+var float actualFillSL = na
+var bool invalidFillRisk = false
+var float fillRiskDriftPct = na
+var float currentTradeRiskPct = na
+var float currentTradeQuality = na
+var int currentTradeTier = 0
+var string currentSignalId = ""
+var float tradeMFE = 0.0
+var float tradeMAE = 0.0
+var string forcedExitReason = ""
+float currentR = na
+bool enteredLong = strategy.position_size > 0 and strategy.position_size[1] <= 0
+bool enteredShort = strategy.position_size < 0 and strategy.position_size[1] >= 0
+bool isFlat = strategy.position_size == 0
+
+if enteredLong
+    tradeDir := 1
+    tradeEnhanced := pendingEnhanced
+    actualEntryPrice := strategy.position_avg_price
+    tradeEntryPrice := actualEntryPrice
+    actualFillSL := pendingLongStop
+    tradeInitialRisk := tradeEntryPrice - actualFillSL
+    tradeActiveStop := actualFillSL
+    invalidFillRisk := na(tradeInitialRisk) or tradeInitialRisk <= 0
+    tradeTargetPrice := invalidFillRisk ? tradeEntryPrice : tradeEntryPrice + tradeInitialRisk * targetRR
+    tradePartialTargetPrice := invalidFillRisk ? tradeEntryPrice : tradeEntryPrice + tradeInitialRisk * partialTargetRInput
+    tradeRunnerTargetPrice := invalidFillRisk ? tradeEntryPrice : tradeEntryPrice + tradeInitialRisk * runnerTargetRInput
+    float sigRisk = pendingSignalPrice - pendingLongStop
+    fillRiskDriftPct := sigRisk > 0 ? (actualEntryPrice - pendingSignalPrice) / sigRisk * 100 : na
+    barsInTrade := 0
+    lastCountedTradeBar := bar_index
+    currentTradeRiskPct := pendingRiskPct
+    currentTradeQuality := pendingQuality
+    currentTradeTier := pendingTierCode
+    currentSignalId := pendingSignalId
+    tradeMFE := 0
+    tradeMAE := 0
+    pendingActive := false
+    if invalidFillRisk and (tradeEnhanced or closeOnInvalidFillRiskInput)
+        forcedExitReason := "INVALID FILL RISK"
+        strategy.close("MX BUY", comment="InvalidFillRisk")
+
+if enteredShort
+    tradeDir := -1
+    tradeEnhanced := pendingEnhanced
+    actualEntryPrice := strategy.position_avg_price
+    tradeEntryPrice := actualEntryPrice
+    actualFillSL := pendingShortStop
+    tradeInitialRisk := actualFillSL - tradeEntryPrice
+    tradeActiveStop := actualFillSL
+    invalidFillRisk := na(tradeInitialRisk) or tradeInitialRisk <= 0
+    tradeTargetPrice := invalidFillRisk ? tradeEntryPrice : tradeEntryPrice - tradeInitialRisk * targetRR
+    tradePartialTargetPrice := invalidFillRisk ? tradeEntryPrice : tradeEntryPrice - tradeInitialRisk * partialTargetRInput
+    tradeRunnerTargetPrice := invalidFillRisk ? tradeEntryPrice : tradeEntryPrice - tradeInitialRisk * runnerTargetRInput
+    float sigRisk = pendingShortStop - pendingSignalPrice
+    fillRiskDriftPct := sigRisk > 0 ? (pendingSignalPrice - actualEntryPrice) / sigRisk * 100 : na
+    barsInTrade := 0
+    lastCountedTradeBar := bar_index
+    currentTradeRiskPct := pendingRiskPct
+    currentTradeQuality := pendingQuality
+    currentTradeTier := pendingTierCode
+    currentSignalId := pendingSignalId
+    tradeMFE := 0
+    tradeMAE := 0
+    pendingActive := false
+    if invalidFillRisk and (tradeEnhanced or closeOnInvalidFillRiskInput)
+        forcedExitReason := "INVALID FILL RISK"
+        strategy.close("MX SELL", comment="InvalidFillRisk")
+
+bool manageNow = barstate.isconfirmed or not confirmedSignalMode
+if tradeDir != 0 and not isFlat
+    if bar_index != lastCountedTradeBar
+        barsInTrade += 1
+        lastCountedTradeBar := bar_index
+    bool riskValid = not na(tradeInitialRisk) and tradeInitialRisk > 0 and not invalidFillRisk
+    if riskValid
+        currentR := tradeDir == 1 ? (close - tradeEntryPrice) / tradeInitialRisk : (tradeEntryPrice - close) / tradeInitialRisk
+        float favorableR = tradeDir == 1 ? (high - tradeEntryPrice) / tradeInitialRisk : (tradeEntryPrice - low) / tradeInitialRisk
+        float adverseR = tradeDir == 1 ? (low - tradeEntryPrice) / tradeInitialRisk : (tradeEntryPrice - high) / tradeInitialRisk
+        tradeMFE := math.max(tradeMFE, favorableR)
+        tradeMAE := math.min(tradeMAE, adverseR)
+    if manageNow and adaptiveExitEnabled and riskValid
+        bool beActive = currentR >= breakEvenActivationRInput
+        bool trActive = currentR >= trailActivationRInput
+        bool useBE = effectiveExitMode == "BreakEven" or effectiveExitMode == "BreakEvenDelayedTrail" or effectiveExitMode == "BreakEven+" or effectiveExitMode == "Partial TP Simulation" or effectiveExitMode == "Hybrid Adaptive Exit"
+        bool useTrail = effectiveExitMode == "DelayedTrail" or effectiveExitMode == "BreakEvenDelayedTrail" or effectiveExitMode == "Adaptive ATR" or effectiveExitMode == "Regime Trail" or effectiveExitMode == "Hybrid Adaptive Exit"
+        float regimeTrailMult = effectiveExitMode == "Regime Trail" or effectiveExitMode == "Hybrid Adaptive Exit" ? (marketInefficiencyScore > 55 ? trailAtrMultiplierInput * 0.8 : regimeName == "TREND_UP" or regimeName == "TREND_DOWN" ? trailAtrMultiplierInput * 1.25 : trailAtrMultiplierInput) : trailAtrMultiplierInput
+        if tradeDir == 1
+            float beStop = useBE and beActive ? tradeEntryPrice + breakEvenBufferAtrInput * atrFast : na
+            float trStop = useTrail and trActive ? close - regimeTrailMult * atrFast : na
+            float candidateStop = math.max(nz(beStop, tradeActiveStop), nz(trStop, tradeActiveStop))
+            tradeActiveStop := math.max(tradeActiveStop, candidateStop)
+        else
+            float beStop = useBE and beActive ? tradeEntryPrice - breakEvenBufferAtrInput * atrFast : na
+            float trStop = useTrail and trActive ? close + regimeTrailMult * atrFast : na
+            float candidateStop = math.min(nz(beStop, tradeActiveStop), nz(trStop, tradeActiveStop))
+            tradeActiveStop := math.min(tradeActiveStop, candidateStop)
+    bool timeStopHit = manageNow and effectiveTimeStopMode == "On" and barsInTrade >= effectiveMaximumBarsInTrade
+    bool momentumExitHit = manageNow and (effectiveExitMode == "Momentum Exit" or effectiveExitMode == "Hybrid Adaptive Exit") and barsInTrade >= 2 and ((tradeDir == 1 and zeroSlopeN < -0.04 and close < zeroLag) or (tradeDir == -1 and zeroSlopeN > 0.04 and close > zeroLag))
+    bool regimeExitHit = manageNow and (effectiveExitMode == "Regime Trail" or effectiveExitMode == "Hybrid Adaptive Exit") and marketInefficiencyScore > 82 and currentR > 0.2
+    if timeStopHit
+        forcedExitReason := "TIME EXIT"
+        if tradeDir == 1
+            strategy.close("MX BUY", comment="TimeStop")
+        else
+            strategy.close("MX SELL", comment="TimeStop")
+    else if momentumExitHit
+        forcedExitReason := "MOMENTUM EXIT"
+        if tradeDir == 1
+            strategy.close("MX BUY", comment="MomentumExit")
+        else
+            strategy.close("MX SELL", comment="MomentumExit")
+    else if regimeExitHit
+        forcedExitReason := "REGIME EXIT"
+        if tradeDir == 1
+            strategy.close("MX BUY", comment="RegimeExit")
+        else
+            strategy.close("MX SELL", comment="RegimeExit")
+    else if adaptiveExitEnabled and riskValid
+        if effectiveExitMode == "Partial TP Simulation" or effectiveExitMode == "Hybrid Adaptive Exit"
+            if tradeDir == 1
+                strategy.exit("TP1 BUY", "MX BUY", stop=tradeActiveStop, limit=tradePartialTargetPrice, qty_percent=partialTargetPercentInput)
+                strategy.exit("RUNNER BUY", "MX BUY", stop=tradeActiveStop, limit=tradeRunnerTargetPrice, qty_percent=100 - partialTargetPercentInput)
+            else
+                strategy.exit("TP1 SELL", "MX SELL", stop=tradeActiveStop, limit=tradePartialTargetPrice, qty_percent=partialTargetPercentInput)
+                strategy.exit("RUNNER SELL", "MX SELL", stop=tradeActiveStop, limit=tradeRunnerTargetPrice, qty_percent=100 - partialTargetPercentInput)
+        else
+            if tradeDir == 1
+                strategy.exit("Exit BUY", "MX BUY", stop=tradeActiveStop, limit=tradeTargetPrice)
+            else
+                strategy.exit("Exit SELL", "MX SELL", stop=tradeActiveStop, limit=tradeTargetPrice)
+
+// Closed-trade aggregation, exit classification, and loss-streak state.
+int closedTradeDelta = nz(ta.change(strategy.closedtrades), 0)
+bool closedTradeEvent = closedTradeDelta > 0
+var float tradeClosedProfit = 0.0
+float lastExitPrice = na
+float lastExitR = na
+string lastExitId = ""
+string lastExitType = ""
+int lastExitDir = 0
+if closedTradeEvent
+    int lastClosedIndex = strategy.closedtrades - 1
+    for closedOffset = 0 to closedTradeDelta - 1
+        int aggregateIndex = strategy.closedtrades - 1 - closedOffset
+        tradeClosedProfit += strategy.closedtrades.profit(aggregateIndex)
+    lastExitPrice := strategy.closedtrades.exit_price(lastClosedIndex)
+    lastExitId := strategy.closedtrades.exit_id(lastClosedIndex)
+    string lastEntryId = strategy.closedtrades.entry_id(lastClosedIndex)
+    float lastClosedEntry = strategy.closedtrades.entry_price(lastClosedIndex)
+    lastExitDir := str.contains(lastEntryId, "BUY") ? 1 : str.contains(lastEntryId, "SELL") ? -1 : tradeDir
+    float eventRisk = not na(tradeInitialRisk) and tradeInitialRisk > 0 ? tradeInitialRisk : lastExitDir == 1 ? lastClosedEntry - pendingLongStop : pendingShortStop - lastClosedEntry
+    lastExitR := not na(eventRisk) and eventRisk > 0 ? (lastExitDir == 1 ? (lastExitPrice - lastClosedEntry) / eventRisk : (lastClosedEntry - lastExitPrice) / eventRisk) : na
+    lastExitType := str.length(forcedExitReason) > 0 ? forcedExitReason : str.contains(lastExitId, "TP1") or str.contains(lastExitId, "RUNNER") ? "TP EXIT" : not na(lastExitR) and math.abs(lastExitR) <= 0.12 ? "BE EXIT" : not na(lastExitR) and lastExitR < 0 ? "SL EXIT" : adaptiveExitEnabled ? "TRAIL EXIT" : "MANAGED EXIT"
+
+bool positionJustClosed = strategy.position_size == 0 and (strategy.position_size[1] != 0 or (closedTradeEvent and (tradeDir != 0 or pendingSide != 0)))
+if positionJustClosed
+    if tradeClosedProfit < 0
+        consecutiveLosses += 1
+    else
+        consecutiveLosses := 0
+    if enableLossStreakGuardInput and consecutiveLosses >= maximumConsecutiveLossesInput
+        pauseUntilBar := bar_index + lossPauseBarsInput
+    tradeClosedProfit := 0
+
+// ============================================================================
+// SECTION 11.1 — SIGNAL & EXIT VISUALIZATION ENGINE
+// Visual objects expose model state without participating in order logic.
+// ============================================================================
+bool minimalVisual = visualModeInput == "Minimal"
+bool traderVisual = visualModeInput == "Trader"
+bool analystVisual = visualModeInput == "Analyst"
+bool fullICTVisual = visualModeInput == "Full Structure"
+bool showContextVisual = traderVisual or analystVisual or fullICTVisual
+
+plot(showBandsInput and not minimalVisual ? upperBB : na, "BB Upper", color=color.new(color.red, 65))
+plot(showBandsInput and not minimalVisual ? basis : na, "BB Basis", color=color.new(color.gray, 65))
+plot(showBandsInput and not minimalVisual ? lowerBB : na, "BB Lower", color=color.new(color.blue, 65))
+plot(showBandsInput ? macroTrend : na, "ALMA Macro Trend", color=color.orange, linewidth=2)
+plot(showBandsInput and showContextVisual ? dvaeUpperBand : na, "Adaptive Upper Band", color=color.new(color.red, 72))
+plot(showBandsInput and showContextVisual ? dvaeLowerBand : na, "Adaptive Lower Band", color=color.new(color.blue, 72))
+plot(showBandsInput and showContextVisual ? zeroLag : na, "Zero-Lag Baseline", color=color.new(color.silver, 45))
+
+plotshape(showLiquidityRejectionArrowsInput and showContextVisual and bearishLiquidityRejectionConfirmed, title="Bearish Liquidity Rejection", style=shape.triangledown, location=location.abovebar, color=color.red, size=size.tiny)
+plotshape(showLiquidityRejectionArrowsInput and showContextVisual and bullishLiquidityRejectionConfirmed, title="Bullish Liquidity Rejection", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.tiny)
+
+if showSetupMarkersInput and multiFactorEngine and not minimalVisual and setupLong and not setupLong[1] and not armedLong
+    label.new(bar_index, low, "", style=label.style_circle, color=color.new(color.teal, 72), size=size.tiny)
+if showSetupMarkersInput and multiFactorEngine and not minimalVisual and setupShort and not setupShort[1] and not armedShort
+    label.new(bar_index, high, "", style=label.style_circle, color=color.new(color.fuchsia, 72), size=size.tiny)
+
+var label[] signalMarkers = array.new_label()
+if fireLong
+    string markerText = signalMarkerStyleInput == "Arrow + Score" ? str.tostring(math.round(executedQuality)) : signalMarkerStyleInput == "Arrow + Tier" ? (executedTierCode == 3 ? "P" : executedTierCode == 2 ? "S" : "V") : ""
+    label signalMarker = label.new(bar_index, low, markerText, style=label.style_arrowup, color=executedTierCode == 3 ? color.rgb(0, 255, 190) : executedTierCode == 2 ? color.aqua : color.lime, textcolor=color.black, size=executedTierCode == 3 ? size.huge : executedTierCode == 2 ? size.large : size.normal)
+    array.push(signalMarkers, signalMarker)
+    if array.size(signalMarkers) > maximumHistoricalSignalMarkersInput
+        label.delete(array.shift(signalMarkers))
+if fireShort
+    string markerText = signalMarkerStyleInput == "Arrow + Score" ? str.tostring(math.round(executedQuality)) : signalMarkerStyleInput == "Arrow + Tier" ? (executedTierCode == 3 ? "P" : executedTierCode == 2 ? "S" : "V") : ""
+    label signalMarker = label.new(bar_index, high, markerText, style=label.style_arrowdown, color=executedTierCode == 3 ? color.rgb(255, 40, 180) : executedTierCode == 2 ? color.rgb(255, 70, 120) : color.fuchsia, textcolor=color.white, size=executedTierCode == 3 ? size.huge : executedTierCode == 2 ? size.large : size.normal)
+    array.push(signalMarkers, signalMarker)
+    if array.size(signalMarkers) > maximumHistoricalSignalMarkersInput
+        label.delete(array.shift(signalMarkers))
+if showRejectedSignalsInput and multiFactorEngine and barstate.isconfirmed and primaryLongSignal and not primaryLongSignal[1] and not qualifiedLong
+    label.new(bar_index, low, "×", style=label.style_none, textcolor=color.orange, size=size.small)
+if showRejectedSignalsInput and multiFactorEngine and barstate.isconfirmed and primaryShortSignal and not primaryShortSignal[1] and not qualifiedShort
+    label.new(bar_index, high, "×", style=label.style_none, textcolor=color.orange, size=size.small)
+if showStructureBreaksInput and fullICTVisual and (bullMSS or bullBOS)
+    label.new(bar_index, low, bullMSS ? "MSS" : "BOS", style=label.style_label_up, color=color.new(color.teal, 20), textcolor=color.white, size=size.tiny)
+if showStructureBreaksInput and fullICTVisual and (bearMSS or bearBOS)
+    label.new(bar_index, high, bearMSS ? "MSS" : "BOS", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.tiny)
+
+buildSignalLabelText(string _tier, float _quality, float _entry, float _sl, float _tp, float _rr, int _side) =>
+    string _txt = ""
+    if signalLabelDetailInput == "Minimal"
+        _txt := (_side == 1 ? "BUY " : "SELL ") + str.tostring(math.round(_quality))
+    else if signalLabelDetailInput == "Compact"
+        _txt := _tier + " · " + str.tostring(math.round(_quality)) + " · 1:" + str.tostring(_rr, "#.##") + "\nE  " + str.tostring(_entry, format.mintick) + "\nSL " + str.tostring(_sl, format.mintick) + "  |  TP " + str.tostring(_tp, format.mintick)
+    else if signalLabelDetailInput == "Detailed"
+        _txt := _tier + "\nQuality " + str.tostring(math.round(_quality)) + "/100\nE " + str.tostring(_entry, format.mintick) + " | SL " + str.tostring(_sl, format.mintick) + "\nTP " + str.tostring(_tp, format.mintick) + " | RR 1:" + str.tostring(_rr, "#.##") + "\nHTF " + directionLabel(htfBiasCode) + " | " + regimeName + "\n" + sessionName + " | " + marketStructureContext
+    _txt
+
+var label[] signalLabels = array.new_label()
+if (fireLong or fireShort) and signalLabelDetailInput != "Off" and maximumHistoricalSignalLabelsInput > 0
+    int labelSide = fireLong ? 1 : -1
+    float labelQuality = fireLong ? executedQuality : executedQuality
+    float labelSL = fireLong ? signalSL : signalSL
+    float labelTP = fireLong ? signalTP : signalTP
+    float labelRR = fireLong ? rrLongAtSignal : rrShortAtSignal
+    string labelText = buildSignalLabelText(executedTierText, labelQuality, close, labelSL, labelTP, labelRR, labelSide)
+    float labelY = labelSide == 1 ? low - referenceAtr * 0.65 : high + referenceAtr * 0.65
+    label sigLabel = label.new(bar_index, labelY, labelText, style=labelSide == 1 ? label.style_label_up : label.style_label_down, color=labelSide == 1 ? color.new(color.teal, 8) : color.new(color.fuchsia, 8), textcolor=color.white, size=size.small)
+    array.push(signalLabels, sigLabel)
+    if array.size(signalLabels) > maximumHistoricalSignalLabelsInput
+        label.delete(array.shift(signalLabels))
+
+var box longOpportunityBox = na
+var box shortOpportunityBox = na
+float longZoneTop = bullObActive ? bullObTop : marketStructureBullFvgActive ? marketStructureBullFvgTop : na
+float longZoneBottom = bullObActive ? bullObBottom : marketStructureBullFvgActive ? marketStructureBullFvgBottom : na
+int longZoneOrigin = bullObActive ? bullObOrigin : marketStructureBullFvgActive ? marketStructureBullFvgOrigin : na
+float shortZoneTop = bearObActive ? bearObTop : marketStructureBearFvgActive ? marketStructureBearFvgTop : na
+float shortZoneBottom = bearObActive ? bearObBottom : marketStructureBearFvgActive ? marketStructureBearFvgBottom : na
+int shortZoneOrigin = bearObActive ? bearObOrigin : marketStructureBearFvgActive ? marketStructureBearFvgOrigin : na
+if showOpportunityZonesInput and multiFactorEngine and showContextVisual and not na(longZoneTop) and not na(longZoneBottom)
+    if na(longOpportunityBox)
+        longOpportunityBox := box.new(longZoneOrigin, longZoneTop, bar_index + 1, longZoneBottom, bgcolor=color.new(color.teal, 90), border_color=color.new(color.teal, 45), text="LONG OPPORTUNITY", text_size=size.tiny, text_color=color.new(color.teal, 10))
+    else
+        box.set_left(longOpportunityBox, longZoneOrigin)
+        box.set_top(longOpportunityBox, longZoneTop)
+        box.set_bottom(longOpportunityBox, longZoneBottom)
+        box.set_right(longOpportunityBox, bar_index + 1)
+else if not na(longOpportunityBox)
+    box.delete(longOpportunityBox)
+    longOpportunityBox := na
+if showOpportunityZonesInput and multiFactorEngine and showContextVisual and not na(shortZoneTop) and not na(shortZoneBottom)
+    if na(shortOpportunityBox)
+        shortOpportunityBox := box.new(shortZoneOrigin, shortZoneTop, bar_index + 1, shortZoneBottom, bgcolor=color.new(color.fuchsia, 91), border_color=color.new(color.fuchsia, 45), text="SHORT OPPORTUNITY", text_size=size.tiny, text_color=color.new(color.fuchsia, 10))
+    else
+        box.set_left(shortOpportunityBox, shortZoneOrigin)
+        box.set_top(shortOpportunityBox, shortZoneTop)
+        box.set_bottom(shortOpportunityBox, shortZoneBottom)
+        box.set_right(shortOpportunityBox, bar_index + 1)
+else if not na(shortOpportunityBox)
+    box.delete(shortOpportunityBox)
+    shortOpportunityBox := na
+
+if closedTradeEvent and showExitMarkersInput and not na(lastExitPrice)
+    string exitCode = str.contains(lastExitType, "SL") ? "SL" : str.contains(lastExitType, "BE") ? "BE" : str.contains(lastExitType, "TIME") ? "TIME" : str.contains(lastExitType, "REGIME") ? "REG" : str.contains(lastExitType, "MOMENTUM") ? "MOM" : str.contains(lastExitType, "TP") ? "TP" : str.contains(lastExitType, "TRAIL") ? "TRAIL" : "EXIT"
+    string exitRText = na(lastExitR) ? "" : (lastExitR >= 0 ? "+" : "") + str.tostring(lastExitR, "#.##") + "R"
+    string exitText = exitMarkerDetailInput == "Minimal" ? exitCode : exitMarkerDetailInput == "R-Multiple" ? exitCode + (str.length(exitRText) > 0 ? " " + exitRText : "") : lastExitType + (str.length(exitRText) > 0 ? "\n" + exitRText : "")
+    color exitColor = lastExitType == "SL EXIT" ? color.red : lastExitType == "BE EXIT" ? color.gray : lastExitType == "TIME EXIT" ? color.orange : lastExitType == "REGIME EXIT" or lastExitType == "MOMENTUM EXIT" ? color.yellow : color.green
+    label.new(bar_index, lastExitPrice, exitText, style=(lastExitDir == 1 or lastExitDir == 0 and tradeDir == 1) ? label.style_label_down : label.style_label_up, color=color.new(exitColor, 15), textcolor=color.white, size=size.tiny)
+
+// ============================================================================
+// SECTION 11.2 — DIAGNOSTIC DASHBOARD
+// The dashboard surfaces state needed for operator review while keeping
+// the calculation path independent from presentation choices.
+// ============================================================================
+color cHdr = color.new(#1e222d, 0)
+color cLbl = color.new(#2a2e39, 0)
+color cVal = color.new(#131722, 0)
+color cTxt = color.white
+
+resolveDashboardPosition(string _choice) =>
+    _choice == "Top Left" ? position.top_left : _choice == "Top Center" ? position.top_center : _choice == "Middle Left" ? position.middle_left : _choice == "Middle Center" ? position.middle_center : _choice == "Middle Right" ? position.middle_right : _choice == "Bottom Left" ? position.bottom_left : _choice == "Bottom Center" ? position.bottom_center : _choice == "Bottom Right" ? position.bottom_right : position.top_right
+
+resolveDashboardTextSize(string _choice) =>
+    _choice == "Compact" ? size.small : _choice == "Large" ? size.large : size.normal
+
+resolveDashboardHeaderSize(string _choice) =>
+    _choice == "Compact" ? size.normal : _choice == "Large" ? size.huge : size.large
+
+renderDashboardCell(table _table, int _column, int _row, string _text, color _textColor, color _background, string _textSize, bool _rightAlign, float _width) =>
+    table.cell(_table, _column, _row, _text, width=_width, text_color=_textColor, bgcolor=_background, text_size=_textSize, text_halign=_rightAlign ? text.align_right : text.align_left, text_valign=text.align_center)
+
+int dashboardRows = dashboardModeInput == "Minimized" ? 3 : dashboardModeInput == "Compact" ? 15 : 22
+string dashboardAnchor = resolveDashboardPosition(dashboardPositionInput)
+string dashboardBodySize = resolveDashboardTextSize(dashboardTextSizeInput)
+string dashboardHeaderSize = resolveDashboardHeaderSize(dashboardTextSizeInput)
+float dashboardLabelWidth = dashboardWidthInput == "Auto" ? 0.0 : dashboardWidthInput == "Extra Wide" ? 10.0 : 8.0
+float dashboardValueWidth = dashboardWidthInput == "Auto" ? 0.0 : dashboardWidthInput == "Extra Wide" ? 18.0 : 14.0
+var table dash = showDashboardInput ? table.new(dashboardAnchor, 2, dashboardRows, frame_color=color.new(color.silver, 25), frame_width=2, border_color=color.new(color.gray, 55), border_width=1) : na
+
+if barstate.islast and showDashboardInput and not na(dash)
+    table.set_position(dash, dashboardAnchor)
+    float liveQuality = math.max(multiFactorBullScore, multiFactorBearScore)
+    string liveSignal = strategy.position_size > 0 ? "IN LONG" : strategy.position_size < 0 ? "IN SHORT" : fireLong ? executedTierText : fireShort ? executedTierText : circuitPaused ? "PAUSED" : setupState == "CONFIRMED" ? "CONFIRMED" : setupState
+    color liveColor = strategy.position_size > 0 or fireLong ? color.lime : strategy.position_size < 0 or fireShort ? color.red : circuitPaused ? color.orange : color.silver
+    string liquidityText = sellsideSweepRecent ? "SELLSIDE RECLAIM" : buysideSweepRecent ? "BUYSIDE RECLAIM" : "NEUTRAL"
+    string fvgText = inMarketStructureBullFvg or isInsideBullishFVG ? "BULL FVG" : inMarketStructureBearFvg or isInsideBearishFVG ? "BEAR FVG" : inBPR ? "BPR" : "NONE"
+    string recEntryText = strategy.position_size != 0 and not na(actualEntryPrice) ? str.tostring(actualEntryPrice, format.mintick) : fireLong or fireShort ? (effectiveEntryMode == "Market Next Bar" ? "NEXT BAR MKT" : str.tostring(close, format.mintick)) : overextendedLong or overextendedShort ? "WAIT RETRACE" : "—"
+    string recSLText = strategy.position_size != 0 and not na(tradeActiveStop) ? str.tostring(tradeActiveStop, format.mintick) : not na(signalSL) ? str.tostring(signalSL, format.mintick) : "—"
+    string recTPText = strategy.position_size != 0 and not na(tradeTargetPrice) ? str.tostring(tradeTargetPrice, format.mintick) : not na(signalTP) ? str.tostring(signalTP, format.mintick) : "—"
+    string rrText = fireLong ? "1:" + str.tostring(rrLongAtSignal, "#.##") : fireShort ? "1:" + str.tostring(rrShortAtSignal, "#.##") : "—"
+    string statusText = not standardChart ? "STANDARD CANDLES REQUIRED" : multiFactorEngine and not higherTimeframeValid ? "HTF TIMEFRAME INVALID" : circuitPaused ? (dailyGuardHit ? "DAILY DD GUARD" : "LOSS-STREAK PAUSE") : multiFactorEngine and rejectedReasonText != "READY" ? "WAIT — " + rejectedReasonText : "READY"
+    color statusColor = statusText == "READY" ? color.lime : color.orange
+    string signalSummary = liveSignal + " · " + str.tostring(math.round(liveQuality)) + "/100"
+
+    renderDashboardCell(dash, 0, 0, "MAESTRO-X", cTxt, cHdr, dashboardHeaderSize, false, dashboardLabelWidth)
+    renderDashboardCell(dash, 1, 0, syminfo.ticker + " · " + timeframe.period, color.aqua, cHdr, dashboardHeaderSize, true, dashboardValueWidth)
+
+    if dashboardModeInput == "Minimized"
+        renderDashboardCell(dash, 0, 1, "Signal", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+        renderDashboardCell(dash, 1, 1, signalSummary, liveColor, cVal, dashboardBodySize, true, dashboardValueWidth)
+        renderDashboardCell(dash, 0, 2, "Status", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+        renderDashboardCell(dash, 1, 2, statusText, statusColor, cVal, dashboardBodySize, true, dashboardValueWidth)
+    else
+        renderDashboardCell(dash, 0, 1, "Preset / Engine", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+        renderDashboardCell(dash, 1, 1, setupPresetInput + " / " + effectiveEngine, color.aqua, cVal, dashboardBodySize, true, dashboardValueWidth)
+        renderDashboardCell(dash, 0, 2, "Session / Q", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+        renderDashboardCell(dash, 1, 2, sessionName + " / " + (isQ1 ? "Q1" : isQ2 ? "Q2" : isQ3 ? "Q3" : isQ4 ? "Q4" : "—"), inSession ? color.lime : color.gray, cVal, dashboardBodySize, true, dashboardValueWidth)
+        renderDashboardCell(dash, 0, 3, "Regime", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+        renderDashboardCell(dash, 1, 3, regimeName + " · " + str.tostring(math.round(regimeScore)), regimeName == "TREND_UP" ? color.lime : regimeName == "TREND_DOWN" ? color.red : color.silver, cVal, dashboardBodySize, true, dashboardValueWidth)
+        renderDashboardCell(dash, 0, 4, "Market Inefficiency", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+        renderDashboardCell(dash, 1, 4, str.tostring(math.round(marketInefficiencyScore)) + "/100", marketInefficiencyScore > 65 ? color.red : marketInefficiencyScore > 45 ? color.orange : color.lime, cVal, dashboardBodySize, true, dashboardValueWidth)
+        renderDashboardCell(dash, 0, 5, "Macro / HTF", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+        renderDashboardCell(dash, 1, 5, directionLabel(isMacroBull ? 1 : isMacroBear ? -1 : 0) + " / " + directionLabel(htfBiasCode) + " · " + str.tostring(math.round(htfAgreement)), htfBiasCode == 1 ? color.lime : htfBiasCode == -1 ? color.red : color.silver, cVal, dashboardBodySize, true, dashboardValueWidth)
+        renderDashboardCell(dash, 0, 6, "Bull / Bear", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+        renderDashboardCell(dash, 1, 6, str.tostring(math.round(multiFactorBullScore)) + " / " + str.tostring(math.round(multiFactorBearScore)), color.yellow, cVal, dashboardBodySize, true, dashboardValueWidth)
+        renderDashboardCell(dash, 0, 7, "Signal Quality", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+        renderDashboardCell(dash, 1, 7, str.tostring(math.round(liveQuality)) + "/100", liveQuality >= premiumQualityThreshold ? color.aqua : liveQuality >= validQualityThreshold ? color.lime : color.silver, cVal, dashboardBodySize, true, dashboardValueWidth)
+        renderDashboardCell(dash, 0, 8, "Live / State", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+        renderDashboardCell(dash, 1, 8, liveSignal, liveColor, cVal, dashboardBodySize, true, dashboardValueWidth)
+        renderDashboardCell(dash, 0, 9, "Structure / Liquidity", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+        renderDashboardCell(dash, 1, 9, marketStructureContext + " / " + liquidityText, cTxt, cVal, dashboardBodySize, true, dashboardValueWidth)
+        renderDashboardCell(dash, 0, 10, "FVG", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+        renderDashboardCell(dash, 1, 10, fvgText, cTxt, cVal, dashboardBodySize, true, dashboardValueWidth)
+        renderDashboardCell(dash, 0, 11, "Entry", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+        renderDashboardCell(dash, 1, 11, recEntryText, cTxt, cVal, dashboardBodySize, true, dashboardValueWidth)
+        renderDashboardCell(dash, 0, 12, "SL / TP", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+        renderDashboardCell(dash, 1, 12, recSLText + " / " + recTPText, cTxt, cVal, dashboardBodySize, true, dashboardValueWidth)
+        renderDashboardCell(dash, 0, 13, "RR / Risk", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+        renderDashboardCell(dash, 1, 13, rrText + " / " + (na(pendingRiskPct) ? str.tostring(baseRiskPercentInput, "#.##") : str.tostring(pendingRiskPct, "#.##")) + "%", cTxt, cVal, dashboardBodySize, true, dashboardValueWidth)
+        renderDashboardCell(dash, 0, 14, "Status", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+        renderDashboardCell(dash, 1, 14, statusText, statusColor, cVal, dashboardBodySize, true, dashboardValueWidth)
+
+        if dashboardModeInput == "Full"
+            renderDashboardCell(dash, 0, 15, "Actual Fill", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+            renderDashboardCell(dash, 1, 15, na(actualEntryPrice) ? "—" : str.tostring(actualEntryPrice, format.mintick), cTxt, cVal, dashboardBodySize, true, dashboardValueWidth)
+            renderDashboardCell(dash, 0, 16, "Current R / Bars", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+            renderDashboardCell(dash, 1, 16, (na(currentR) ? "—" : str.tostring(currentR, "#.##") + "R") + " / " + str.tostring(barsInTrade), cTxt, cVal, dashboardBodySize, true, dashboardValueWidth)
+            renderDashboardCell(dash, 0, 17, "Fill Drift", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+            renderDashboardCell(dash, 1, 17, na(fillRiskDriftPct) ? "—" : str.tostring(fillRiskDriftPct, "#.##") + "%", not na(fillRiskDriftPct) and fillRiskDriftPct > 20 ? color.orange : cTxt, cVal, dashboardBodySize, true, dashboardValueWidth)
+            renderDashboardCell(dash, 0, 18, "MFE / MAE", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+            renderDashboardCell(dash, 1, 18, str.tostring(tradeMFE, "#.##") + " / " + str.tostring(tradeMAE, "#.##"), cTxt, cVal, dashboardBodySize, true, dashboardValueWidth)
+            renderDashboardCell(dash, 0, 19, "Execution / Exit", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+            renderDashboardCell(dash, 1, 19, effectiveEntryMode + " / " + effectiveExitMode, cTxt, cVal, dashboardBodySize, true, dashboardValueWidth)
+            renderDashboardCell(dash, 0, 20, "Losses / Daily DD", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+            renderDashboardCell(dash, 1, 20, str.tostring(consecutiveLosses) + " / " + str.tostring(dailyDrawdownPct, "#.##") + "%", dailyGuardHit or lossStreakPause ? color.red : cTxt, cVal, dashboardBodySize, true, dashboardValueWidth)
+            renderDashboardCell(dash, 0, 21, "Backtest", cTxt, cLbl, dashboardBodySize, false, dashboardLabelWidth)
+            renderDashboardCell(dash, 1, 21, backtestModeInput, cTxt, cVal, dashboardBodySize, true, dashboardValueWidth)
+
+// ============================================================================
+// SECTION 10 — ALERT ENGINE
+// Stable signal identifiers suppress duplicate delivery while explicit
+// status and context fields support downstream idempotent processing.
+// ============================================================================
+string macroBiasJson = isMacroBull ? "bull" : isMacroBear ? "bear" : "neutral"
+string htfBiasJson = htfBiasCode == 1 ? "bull" : htfBiasCode == -1 ? "bear" : "neutral"
+string qPhaseJson = isQ1 ? "Q1" : isQ2 ? "Q2" : isQ3 ? "Q3" : isQ4 ? "Q4" : "none"
+string fvgContextJson = inMarketStructureBullFvg or isInsideBullishFVG ? "bull_fvg" : inMarketStructureBearFvg or isInsideBearishFVG ? "bear_fvg" : inBullIFVG ? "bull_ifvg" : inBearIFVG ? "bear_ifvg" : inBPR ? "bpr" : "none"
+string liquidityContextJson = sellsideSweepRecent ? "sellside_sweep_reclaim" : buysideSweepRecent ? "buyside_sweep_reclaim" : "neutral"
+
+// A versioned payload makes alerts auditable and safe for idempotent consumers.
+buildWebhookPayload(string _action, string _side, string _tier, float _quality, int _rawScore, float _signalPrice, float _entry, float _sl, float _tp, float _risk, float _rr, string _sid, float _actualFill, string _status) =>
+    string _js = '{"schema_version":"2.0"'
+    _js := _js + ',"action":"' + _action + '"'
+    _js := _js + ',"strategy_version":"' + (multiFactorEngine ? "MAESTRO-X-v1.0-multifactor" : "MAESTRO-X-v1.0-primary") + '"'
+    _js := _js + ',"signal_id":"' + _sid + '"'
+    _js := _js + ',"timestamp":' + str.tostring(timenow)
+    _js := _js + ',"bar_time":' + str.tostring(time)
+    _js := _js + ',"symbol":"' + syminfo.ticker + '"'
+    _js := _js + ',"timeframe":"' + timeframe.period + '"'
+    _js := _js + ',"side":"' + _side + '"'
+    _js := _js + ',"signal_tier":"' + _tier + '"'
+    _js := _js + ',"signal_quality":' + str.tostring(_quality, "#.##")
+    _js := _js + ',"entry_type":"' + effectiveEntryMode + '"'
+    _js := _js + ',"signal_price":' + str.tostring(_signalPrice)
+    _js := _js + ',"recommended_entry":' + str.tostring(_entry)
+    _js := _js + ',"actual_strategy_fill":' + (na(_actualFill) ? "null" : str.tostring(_actualFill))
+    _js := _js + ',"sl_price":' + str.tostring(_sl)
+    _js := _js + ',"tp_price":' + str.tostring(_tp)
+    _js := _js + ',"risk_pct":' + str.tostring(_risk)
+    _js := _js + ',"RR":' + str.tostring(_rr, "#.##")
+    _js := _js + ',"regime":"' + regimeName + '"'
+    _js := _js + ',"regime_score":' + str.tostring(regimeScore, "#.##")
+    _js := _js + ',"chop_score":' + str.tostring(marketInefficiencyScore, "#.##")
+    _js := _js + ',"macro_bias":"' + macroBiasJson + '"'
+    _js := _js + ',"htf_bias":"' + htfBiasJson + '"'
+    _js := _js + ',"htf_agreement":' + str.tostring(_side == "BUY" ? htfLongAgreement : htfShortAgreement, "#.##")
+    _js := _js + ',"htf_timeframe":"' + effectiveHigherTimeframe + '"'
+    _js := _js + ',"htf_timeframe_valid":' + (higherTimeframeValid ? "true" : "false")
+    _js := _js + ',"ict_context":"' + marketStructureContext + '"'
+    _js := _js + ',"fvg_context":"' + fvgContextJson + '"'
+    _js := _js + ',"liquidity_context":"' + liquidityContextJson + '"'
+    _js := _js + ',"session":"' + sessionName + '"'
+    _js := _js + ',"q_phase":"' + qPhaseJson + '"'
+    _js := _js + ',"execution_mode":"' + effectiveEntryMode + '"'
+    _js := _js + ',"exit_mode":"' + effectiveExitMode + '"'
+    _js := _js + ',"signal_status":"' + _status + '"'
+    // Compatibility keys remain because webhook schemas are external contracts.
+    // `chop_score`, `ict_context`, and `trap_context` retain their original
+    // names while representing market inefficiency, confirmed market structure,
+    // and liquidity-rejection context, respectively.
+    _js := _js + ',"price":' + str.tostring(_signalPrice)
+    _js := _js + ',"score":' + str.tostring(_rawScore)
+    _js := _js + ',"setup_preset":"' + setupPresetInput + '"'
+    _js := _js + ',"entry_mode":"' + effectiveEntryMode + '"'
+    _js := _js + ',"session_gate":' + (effectiveSessionGate ? "true" : "false")
+    _js := _js + ',"trap_context":"' + (_side == "BUY" and validBullishLiquidityRejection ? "bull_trap" : _side == "SELL" and validBearishLiquidityRejection ? "bear_trap" : "none") + '"'
+    _js := _js + ',"session_active":' + (inSession ? "true" : "false")
+    _js := _js + '}'
+    _js
+
+var string lastAlertSignalId = ""
+bool setupTransitionLong = multiFactorEngine and setupLong and not setupLong[1]
+bool setupTransitionShort = multiFactorEngine and setupShort and not setupShort[1]
+if closedTradeEvent
+    bool isTPEvent = str.contains(lastExitType, "TP") or str.contains(lastExitType, "TRAIL") or str.contains(lastExitType, "MANAGED")
+    bool isSLEvent = str.contains(lastExitType, "SL")
+    bool sendExit = alertExitInput or (alertTakeProfitInput and isTPEvent) or (alertStopLossInput and isSLEvent)
+    if sendExit
+        int exitDir = lastExitDir != 0 ? lastExitDir : tradeDir
+        string exitSide = exitDir == 1 ? "BUY" : "SELL"
+        string exitSid = str.length(currentSignalId) > 0 ? currentSignalId + "_EXIT_" + str.tostring(time) : buildSignalId(exitSide) + "_EXIT"
+        string exitJson = buildWebhookPayload("exit", exitSide, lastExitType, nz(currentTradeQuality, 0), exitDir == 1 ? primaryBullScore : primaryBearScore, nz(pendingSignalPrice, close), nz(tradeEntryPrice, close), nz(tradeActiveStop, close), nz(lastExitPrice, close), nz(currentTradeRiskPct, baseRiskPercentInput), nz(lastExitR, 0), exitSid, lastExitPrice, lastExitType)
+        if confirmedSignalMode
+            alert(exitJson, alert.freq_once_per_bar_close)
+        else
+            alert(exitJson, alert.freq_once_per_bar)
+else if fireLong or fireShort
+    string sideNow = fireLong ? "BUY" : "SELL"
+    string sidNow = pendingSignalId
+    if sidNow != lastAlertSignalId and (alertEntryInput or alertConfirmedInput)
+        string actionNow = alertEntryInput ? "execute" : "confirmed"
+        float rrNow = fireLong ? rrLongAtSignal : rrShortAtSignal
+        float riskNow = pendingRiskPct
+        int rawScoreNow = fireLong ? primaryBullScore : primaryBearScore
+        string signalJson = buildWebhookPayload(actionNow, sideNow, executedTierText, executedQuality, rawScoreNow, signalPrice, signalPrice, signalSL, signalTP, riskNow, rrNow, sidNow, float(na), "EXECUTED")
+        if confirmedSignalMode
+            alert(signalJson, alert.freq_once_per_bar_close)
+        else
+            alert(signalJson, alert.freq_once_per_bar)
+        lastAlertSignalId := sidNow
+else if alertSetupInput and (setupTransitionLong or setupTransitionShort)
+    string setupSide = setupTransitionLong ? "BUY" : "SELL"
+    string setupSid = buildSignalId(setupSide) + "_SETUP"
+    float setupQuality = setupTransitionLong ? multiFactorBullScore : multiFactorBearScore
+    float setupSL = setupTransitionLong ? recommendedLongSL : recommendedShortSL
+    float setupTP = setupTransitionLong ? recommendedLongTP : recommendedShortTP
+    float setupRR = setupTransitionLong ? rrLongAtSignal : rrShortAtSignal
+    string setupJson = buildWebhookPayload("setup", setupSide, "WATCH", setupQuality, setupTransitionLong ? primaryBullScore : primaryBearScore, close, close, setupSL, setupTP, math.min(baseRiskPercentInput * 0.5, maximumRiskPercentInput), setupRR, setupSid, float(na), "SETUP")
+    if confirmedSignalMode
+        alert(setupJson, alert.freq_once_per_bar_close)
+    else
+        alert(setupJson, alert.freq_once_per_bar)
+
+// ============================================================================
+// SECTION 11.3 — DATA WINDOW & RESEARCH AUDIT EXPORTS
+// Numerical state exports support reproducibility checks without adding
+// alternative calculation paths or modifying execution.
+// ============================================================================
+int setupPresetCode = setupPresetInput == "Primary Baseline" ? 0 : setupPresetInput == "Session Filtered" ? 1 : setupPresetInput == "Realistic Market Test" ? 2 : setupPresetInput == "30m Candidate" ? 3 : setupPresetInput == "Custom" ? 4 : setupPresetInput == "Multi-Factor Conservative" ? 6 : setupPresetInput == "Multi-Factor Aggressive" ? 8 : 7
+int effEntryModeCode = effectiveEntryMode == "Limit@Close" ? 0 : 1
+int effExitModeCode = effectiveExitMode == "Baseline ATR Trail" ? 0 : effectiveExitMode == "Fixed ATR" ? 1 : effectiveExitMode == "BreakEven" ? 2 : effectiveExitMode == "DelayedTrail" ? 3 : effectiveExitMode == "BreakEvenDelayedTrail" ? 4 : effectiveExitMode == "Adaptive ATR" ? 5 : effectiveExitMode == "Structure Stop" ? 6 : effectiveExitMode == "BreakEven+" ? 7 : effectiveExitMode == "Partial TP Simulation" ? 8 : effectiveExitMode == "Regime Trail" ? 9 : effectiveExitMode == "Momentum Exit" ? 10 : 11
+int effHTFModeCode = effectiveHigherTimeframeMode == "Off" ? 0 : effectiveHigherTimeframeMode == "Advisory" ? 1 : effectiveHigherTimeframeMode == "Soft Gate" ? 2 : 3
+int effRegimeModeCode = effectiveRegimeMode == "Off" ? 0 : effectiveRegimeMode == "Advisory" ? 1 : effectiveRegimeMode == "Soft Gate" ? 2 : 3
+int effectiveStructureModeCode = effectiveStructureMode == "Off" ? 0 : effectiveStructureMode == "Advisory" ? 1 : effectiveStructureMode == "Weighted" ? 2 : 3
+int qPhaseCode = isQ1 ? 1 : isQ2 ? 2 : isQ3 ? 3 : isQ4 ? 4 : 0
+int macroBiasCode = isMacroBull ? 1 : isMacroBear ? -1 : 0
+float liveSignalQuality = math.max(multiFactorBullScore, multiFactorBearScore)
+int liveTierCode = math.max(longTierCode, shortTierCode)
+int rejectedReasonCode = primaryLongSignal and not qualifiedLong ? rejectedLongReason : primaryShortSignal and not qualifiedShort ? rejectedShortReason : 0
+float entryExtensionATR = primaryLongSignal ? entryExtensionLongATR : primaryShortSignal ? entryExtensionShortATR : math.max(entryExtensionLongATR, entryExtensionShortATR)
+float rrAtSignal = fireLong ? rrLongAtSignal : fireShort ? rrShortAtSignal : na
+
+// Plot-budget policy: keep the complete required quality/rejection exports and
+// the order/fill audit chain. Redundant boolean mirrors are omitted so the
+// strategy remains safely below TradingView's hard 64-plot runtime limit.
+plot(setupPresetCode, "S_setupPresetCode", display=display.data_window)
+plot(effEntryModeCode, "S_effEntryModeCode", display=display.data_window)
+plot(effExitModeCode, "S_effExitModeCode", display=display.data_window)
+plot(qPhaseCode, "S_qPhase", display=display.data_window)
+plot(q1High, "S_q1High", display=display.data_window)
+plot(q1Low, "S_q1Low", display=display.data_window)
+plot(macroBiasCode, "S_macroBias", display=display.data_window)
+plot(primaryBullScore, "PrimaryBullScore", display=display.data_window)
+plot(primaryBearScore, "PrimaryBearScore", display=display.data_window)
+plot(multiFactorBullScore, "MultiFactorBullScore", display=display.data_window)
+plot(multiFactorBearScore, "MultiFactorBearScore", display=display.data_window)
+plot(liveSignalQuality, "SignalQuality", display=display.data_window)
+plot(liveTierCode, "SignalTierCode", display=display.data_window)
+plot(regimeCode, "RegimeCode", display=display.data_window)
+plot(regimeScore, "RegimeScore", display=display.data_window)
+plot(marketInefficiencyScore, "MarketInefficiencyScore", display=display.data_window)
+plot(htfBiasCode, "HTFBias", display=display.data_window)
+plot(htfAgreement, "HTFAgreement", display=display.data_window)
+plot(math.max(marketStructureBullScore, marketStructureBearScore), "MarketStructureConfluence", display=display.data_window)
+plot(sessionQuality, "SessionQuality", display=display.data_window)
+plot(rrAtSignal, "RRAtSignal", display=display.data_window)
+plot(entryExtensionATR, "EntryExtensionATR", display=display.data_window)
+plot(rejectedReasonCode, "RejectedReasonCode", display=display.data_window)
+plot(primaryLongSignal ? 1 : 0, "S_baseLongSignal", display=display.data_window)
+plot(primaryShortSignal ? 1 : 0, "S_baseShortSignal", display=display.data_window)
+plot(qualifiedLong ? 1 : 0, "S_qualifiedLong", display=display.data_window)
+plot(qualifiedShort ? 1 : 0, "S_qualifiedShort", display=display.data_window)
+plot(premiumLong ? 1 : 0, "S_premiumLong", display=display.data_window)
+plot(premiumShort ? 1 : 0, "S_premiumShort", display=display.data_window)
+plot(fireLong ? 1 : 0, "S_executedLong", display=display.data_window)
+plot(fireShort ? 1 : 0, "S_executedShort", display=display.data_window)
+plot(signalPrice, "S_signalPrice", display=display.data_window)
+plot(intendedEntry, "S_intendedEntry", display=display.data_window)
+plot(signalSL, "S_signalSL", display=display.data_window)
+plot(signalTP, "S_signalTP", display=display.data_window)
+plot(actualEntryPrice, "S_actualEntryPrice", display=display.data_window)
+plot(currentR, "S_currentR", display=display.data_window)
+plot(barsInTrade, "S_barsInTrade", display=display.data_window)
+plot(fillRiskDriftPct, "S_fillRiskDriftPct", display=display.data_window)
+plot(tradeMFE, "S_MFE_R", display=display.data_window)
+plot(tradeMAE, "S_MAE_R", display=display.data_window)
+
+// Reset fill-specific state only after the close event has been classified,
+// visualized, exported, and alerted.
+if positionJustClosed
+    pendingActive := false
+    pendingSide := 0
+    tradeDir := 0
+    tradeEnhanced := false
+    barsInTrade := 0
+    lastCountedTradeBar := na
+    tradeActiveStop := na
+    tradeInitialRisk := na
+    tradeEntryPrice := na
+    tradeTargetPrice := na
+    tradePartialTargetPrice := na
+    tradeRunnerTargetPrice := na
+    actualEntryPrice := na
+    actualFillSL := na
+    invalidFillRisk := false
+    fillRiskDriftPct := na
+    currentTradeRiskPct := na
+    currentTradeQuality := na
+    currentTradeTier := 0
+    currentSignalId := ""
+    tradeMFE := 0
+    tradeMAE := 0
+    forcedExitReason := ""

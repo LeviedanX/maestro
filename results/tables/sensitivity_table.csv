@@ -1,0 +1,11 @@
+analysis_dimension,parameter_value,status,interpretation,sample_start,sample_end,total_trades,net_return_pct,win_rate_pct,profit_factor,expectancy_usd,max_drawdown_pct,trade_sharpe_approx
+timeframe,1m,descriptive_observed_subset,Perbandingan lintas timeframe tidak terkontrol; periode dan kelengkapan sampel berbeda.,2026-08-16T23:46,2026-08-21T06:59,61,15.5775,54.09836066,1.335108099,0.102147541,15.30742485,1.071113688
+timeframe,5m,descriptive_observed_subset,Perbandingan lintas timeframe tidak terkontrol; periode dan kelengkapan sampel berbeda.,2026-07-27T11:25,2026-08-21T11:05,61,31.44,57.37704918,1.77624838,0.2061639344,8.156877187,2.115815488
+timeframe,15m,descriptive_observed_subset,Perbandingan lintas timeframe tidak terkontrol; periode dan kelengkapan sampel berbeda.,2026-06-02T03:00,2026-06-11T00:15,30,12.655,60,1.837524818,0.1687333333,3.275521594,1.570510987
+timeframe,30m,descriptive_observed_subset,Perbandingan lintas timeframe tidak terkontrol; periode dan kelengkapan sampel berbeda.,2026-01-08T02:30,2026-01-26T06:30,28,-1.205,46.42857143,0.9315729699,-0.01721428571,10.22555692,-0.1672599129
+timeframe,1h,descriptive_observed_subset,Perbandingan lintas timeframe tidak terkontrol; periode dan kelengkapan sampel berbeda.,2025-01-09T11:00,2026-08-21T09:00,60,28.7725,56.66666667,1.697811193,0.1918166667,5.815465951,1.858394643
+timeframe,2h,descriptive_observed_subset,Perbandingan lintas timeframe tidak terkontrol; periode dan kelengkapan sampel berbeda.,2025-01-16T10:00,2025-02-28T04:00,28,7.0675,53.57142857,1.448445431,0.1009642857,5.114847839,0.944615867
+timeframe,4h,descriptive_observed_subset,Perbandingan lintas timeframe tidak terkontrol; periode dan kelengkapan sampel berbeda.,2023-01-31T10:00,2023-06-15T09:00,28,21.1725,64.28571429,2.946449092,0.3024642857,2.98540783,2.691787253
+timeframe,1D,descriptive_observed_subset,Perbandingan lintas timeframe tidak terkontrol; periode dan kelengkapan sampel berbeda.,1975-01-06T00:00,1977-12-23T00:00,28,8.675,50,1.43940737,0.1239285714,3.938360249,0.83677057
+htf_bias_timeframe,not_available,not_estimable,HTF bias timeframe tidak tercatat per eksperimen pada trade log.,,,,,,,,,
+minimum_entry_score,not_available,not_estimable,Minimum entry score tidak tercatat per eksperimen pada trade log.,,,,,,,,,

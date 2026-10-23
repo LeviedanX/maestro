@@ -1,0 +1,62 @@
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.kdbx
+.netrc
+.npmrc
+credentials.json
+service-account*.json
+
+# Local agent instructions, planning and migration notes
+AGENTS.md
+agent.md
+context.md
+PROGRESS.md
+TODO.md
+hasilmigrasi.txt
+whatif.txt
+.agents/
+.codex/
+.claude/
+.cursor/
+
+# Python environments and generated caches
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Local editors, logs and temporary output
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+*.tmp
+*.bak
+*.orig
+~$*
+tmp/
+temp/
+
+# Incomplete or quarantined generated runs
+results/runs/.*.staging/
+results/invalid_runs/
+
+# Private academic drafts
+docs/proposal/
+docs/journal/
+docs/technical/*.pdf

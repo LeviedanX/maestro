@@ -1,0 +1,111 @@
+{
+  "schema_version": "1.1",
+  "audit_date": "2026-08-24",
+  "project": "MAESTRO-X Research Framework",
+  "classification": "validation_ready",
+  "previous_classification": "prototype",
+  "classification_options": [
+    "prototype",
+    "validation_ready",
+    "publication_ready"
+  ],
+  "readiness": {
+    "research_prototype": "ready",
+    "internal_quantitative_validation": "ready_with_empirical_limitations",
+    "academic_publication": "not_ready"
+  },
+  "decision_basis": [
+    "The canonical command invokes the production preprocessing, performance, permutation-plus-bootstrap Monte Carlo, sensitivity, and reporting engines in one ordered execution.",
+    "Every successful execution is atomically published to a unique results/runs/YYYYMMDD_HHMMSS directory and existing runs are never overwritten.",
+    "Versioned dataset, performance, and artifact schemas fail closed before run publication.",
+    "Thirty-five validation tests pass in both the project environment and a newly created temporary environment installed only from requirements-dev.txt.",
+    "The validated canonical run contains 323 accepted rows, 322 closed trades, 160000 Monte Carlo paths, 21 declared artifacts, and one manifest with zero hash mismatches.",
+    "Pine and all eight raw CSV hashes remained unchanged; shared legacy artifact hashes also remained unchanged.",
+    "Trade logs remain incomplete and non-comparable across timeframes; controlled HTF and entry-score outcomes, full cost/fill provenance, OOS/walk-forward evidence, and runtime TradingView equivalence remain absent."
+  ],
+  "audit_execution": {
+    "project_environment_pytest": {
+      "command": "pytest validation/",
+      "passed": 35,
+      "failed": 0,
+      "exit_code": 0,
+      "duration_seconds": 34.34
+    },
+    "fresh_environment": {
+      "python": "3.13",
+      "install_command": "python -m pip install -r requirements-dev.txt",
+      "pip_check_exit_code": 0,
+      "pytest_passed": 35,
+      "pytest_failed": 0,
+      "pytest_duration_seconds": 21.13,
+      "canonical_pipeline_exit_code": 0,
+      "manifest_created": true,
+      "protected_source_hash_changes": 0
+    },
+    "compileall_exit_code": 0,
+    "canonical_pipeline": {
+      "command": "python -m src.run_research_pipeline",
+      "run_id": "20260824_141758",
+      "run_directory": "results/runs/20260824_141758",
+      "exit_code": 0,
+      "artifact_schema_version": "1.0.0",
+      "declared_artifacts": 21,
+      "manifest_hash_mismatches": 0,
+      "transient_staging_references": 0,
+      "protected_source_hash_changes": 0,
+      "shared_legacy_artifact_hash_changes": 0,
+      "accepted_rows": 323,
+      "closed_trades": 322,
+      "monte_carlo_paths": 160000
+    },
+    "monte_carlo_determinism": {
+      "seed": 20260822,
+      "simulations_per_method_timeframe": 10000,
+      "methods": [
+        "permutation",
+        "bootstrap"
+      ],
+      "repeatability_tests_passed": true
+    }
+  },
+  "canonical_production_data_snapshot": {
+    "raw_files": 8,
+    "raw_rows": 918,
+    "target_candidate_rows": 325,
+    "accepted_rows": 323,
+    "rejected_rows": 2,
+    "closed_trades": 322,
+    "open_trades": 1,
+    "scope": "observed_processed_closed_trades_only"
+  },
+  "integrity": {
+    "pine_modified": false,
+    "raw_data_modified": false,
+    "pine_sha256": "a4e94a39fdf2806db07b0142ad8a014ad1f60ea76efcead4c648e6ae744e0bc6",
+    "runtime_tradingview_equivalence_executed": false,
+    "strategy_logic_modified": false,
+    "experiment_results_modified": false
+  },
+  "publication_claim_gate": "blocked",
+  "future_profitability_claimed": false,
+  "optimization_performed": false,
+  "remaining_limitations": [
+    "Incomplete and cumulatively appended TradingView exports.",
+    "Small, heterogeneous, and period-incomparable timeframe samples.",
+    "Initial-capital provenance conflict between metadata/export and Pine declaration.",
+    "Incomplete commission, slippage, spread, fill, feed, timezone, and date-range provenance.",
+    "No controlled HTF Bias Timeframe or Minimum Entry Score experiment grid.",
+    "No preregistered OOS, walk-forward, cost-stress, cross-feed, or multiple-testing evidence.",
+    "No runtime TradingView compile and A/B backtest equivalence for the current Pine hash.",
+    "No full dependency lock with transitive hashes or CI evidence across operating systems."
+  ],
+  "reports": [
+    "results/reports/reproducibility_audit.md",
+    "results/reports/quantitative_review.md",
+    "results/reports/publication_readiness.md",
+    "results/reports/code_quality_review.md",
+    "results/reports/final_research_summary.md",
+    "results/reports/phase7_5_validation.md",
+    "results/reports/final_status.json"
+  ]
+}

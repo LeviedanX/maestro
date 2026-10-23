@@ -1,0 +1,2395 @@
+{
+  "schema_version": "1.0",
+  "audit_phase": "PHASE_1_DATA_AUDIT_ONLY",
+  "audit_date": "2026-08-23",
+  "analysis_implemented_or_executed_in_this_audit": false,
+  "source_files_modified": false,
+  "overall_data_readiness": "BLOCKED_FOR_QUANTITATIVE_ANALYSIS",
+  "repository_structure": {
+    "top_level_directories": [
+      "strategy",
+      "data",
+      "docs",
+      "validation",
+      "src",
+      "results",
+      "tmp"
+    ],
+    "raw_trade_files": 8,
+    "pdf_documents": 2,
+    "notes": [
+      "Performance, Monte Carlo, sensitivity, and reporting modules/results already exist; this audit did not modify or execute them as analytical inputs.",
+      "Requested validation/equivalence.json is absent; available evidence is results/validation/equivalence.json.",
+      "PDF renders under tmp/pdfs are temporary audit intermediates."
+    ]
+  },
+  "strategy_and_provenance": {
+    "strategy": {
+      "path": "strategy/MAESTRO-X_v1.0.pine",
+      "sha256": "a4e94a39fdf2806db07b0142ad8a014ad1f60ea76efcead4c648e6ae744e0bc6",
+      "physical_line_count": 1554,
+      "bytes": 119518,
+      "pine_version": 5,
+      "strategy_declaration": "strategy(\"MAESTRO-X v1.0 | Quantitative Trading Engine\", overlay=true, calc_on_every_tick=true, calc_on_order_fills=false, process_orders_on_close=false, initial_capital=10000, pyramiding=0, max_boxes_count=300, max_lines_count=300, max_labels_count=300, max_bars_back=3000, backtest_fill_limits_assumption=0, use_bar_magnifier=false, fill_orders_on_standard_ohlc=true)",
+      "declared_initial_capital": 10000.0,
+      "commission_declared_in_strategy_call": false,
+      "slippage_declared_in_strategy_call": false,
+      "static_counts": {
+        "input_declarations": 96,
+        "strategy_entry_calls": 4,
+        "strategy_exit_calls": 16,
+        "strategy_close_calls": 8,
+        "data_window_plots": 40
+      },
+      "data_window_export_titles": [
+        "S_setupPresetCode",
+        "S_effEntryModeCode",
+        "S_effExitModeCode",
+        "S_qPhase",
+        "S_q1High",
+        "S_q1Low",
+        "S_macroBias",
+        "PrimaryBullScore",
+        "PrimaryBearScore",
+        "MultiFactorBullScore",
+        "MultiFactorBearScore",
+        "SignalQuality",
+        "SignalTierCode",
+        "RegimeCode",
+        "RegimeScore",
+        "MarketInefficiencyScore",
+        "HTFBias",
+        "HTFAgreement",
+        "SessionQuality",
+        "RRAtSignal",
+        "EntryExtensionATR",
+        "RejectedReasonCode",
+        "S_baseLongSignal",
+        "S_baseShortSignal",
+        "S_qualifiedLong",
+        "S_qualifiedShort",
+        "S_premiumLong",
+        "S_premiumShort",
+        "S_executedLong",
+        "S_executedShort",
+        "S_signalPrice",
+        "S_intendedEntry",
+        "S_signalSL",
+        "S_signalTP",
+        "S_actualEntryPrice",
+        "S_currentR",
+        "S_barsInTrade",
+        "S_fillRiskDriftPct",
+        "S_MFE_R",
+        "S_MAE_R"
+      ]
+    },
+    "metadata": {
+      "project": {
+        "name": "MAESTRO-X Research",
+        "version": "v1.0"
+      },
+      "asset": {
+        "symbol": "XAUUSD",
+        "market": "Gold Spot"
+      },
+      "strategy": {
+        "name": "MAESTRO-X",
+        "version": "v1.0",
+        "language": "Pine Script v5"
+      },
+      "platform": {
+        "name": "TradingView",
+        "engine": "Strategy Tester"
+      },
+      "dataset": {
+        "type": "trade_log",
+        "source": "TradingView Export",
+        "timeframes": [
+          "1m",
+          "5m",
+          "15m",
+          "30m",
+          "1h",
+          "2h",
+          "4h",
+          "1D"
+        ]
+      },
+      "backtest": {
+        "initial_capital": "40 USD",
+        "commission": 0,
+        "slippage": "not_configured"
+      },
+      "research": {
+        "purpose": [
+          "performance_validation",
+          "robustness_testing",
+          "monte_carlo_analysis",
+          "parameter_sensitivity",
+          "walk_forward_validation"
+        ]
+      },
+      "created": {
+        "date": "2026-08-22"
+      }
+    },
+    "equivalence_evidence": {
+      "requested_path": "validation/equivalence.json",
+      "requested_path_exists": false,
+      "actual_path_used": "results/validation/equivalence.json",
+      "content": {
+        "baseline": {
+          "file": "indikatorupgrade(1).pine",
+          "sha256": "15ceb417c7dcaf4738db4550e7a1e1fc8b3d2a548941047cb7142d87b2e9ef30",
+          "lines": 1460
+        },
+        "candidate": {
+          "file": "MAESTRO-X_v1.0.pine",
+          "sha256": "c73fb6a864c5d51547ae8758d6eac89753d96fc301d1a16b64c90f3d61eb906b",
+          "lines": 1555
+        },
+        "static_equivalence_checks": {
+          "input_inventory_identical": true,
+          "input_group_inventory_identical": true,
+          "executable_text_identical_after_bijection": true,
+          "execution_call_sequence_identical": true,
+          "numeric_literal_sequence_identical": true,
+          "execution_call_counts_identical": true
+        },
+        "input_count": 96,
+        "identifier_bijection_count": 245,
+        "runtime_backtest": {
+          "executed": false,
+          "reason": "TradingView Pine compiler/broker emulator and a fixed symbol-data-timeframe test matrix were not available locally.",
+          "metrics_claimed": false
+        },
+        "status": "passed"
+      },
+      "current_candidate_hash_matches_evidence": false,
+      "current_candidate_line_count_matches_evidence": false
+    },
+    "critical_conflicts": [
+      {
+        "id": "PROV-001",
+        "severity": "critical",
+        "issue": "Metadata says 40 USD initial capital; current Pine declares initial_capital=10000."
+      },
+      {
+        "id": "PROV-002",
+        "severity": "critical",
+        "issue": "Equivalence hash c73fb6a864c5d51547ae8758d6eac89753d96fc301d1a16b64c90f3d61eb906b differs from current Pine a4e94a39fdf2806db07b0142ad8a014ad1f60ea76efcead4c648e6ae744e0bc6."
+      },
+      {
+        "id": "PROV-003",
+        "severity": "high",
+        "issue": "Equivalence reports 1555 lines; current Pine has 1554 physical lines."
+      }
+    ]
+  },
+  "raw_trade_schema": {
+    "raw_header_quality": "minified DOM/CSS names; positional interpretation is required",
+    "schema_20_columns": [
+      {
+        "position": 0,
+        "semantic": "trade_id",
+        "target_type": "int64"
+      },
+      {
+        "position": 1,
+        "semantic": "long_marker",
+        "target_type": "category"
+      },
+      {
+        "position": 2,
+        "semantic": "exit_timestamp",
+        "target_type": "datetime_with_explicit_timezone"
+      },
+      {
+        "position": 3,
+        "semantic": "entry_timestamp",
+        "target_type": "datetime_with_explicit_timezone"
+      },
+      {
+        "position": 4,
+        "semantic": "event_label_a",
+        "target_type": "string"
+      },
+      {
+        "position": 5,
+        "semantic": "event_label_b",
+        "target_type": "string"
+      },
+      {
+        "position": 6,
+        "semantic": "exit_price",
+        "target_type": "float64"
+      },
+      {
+        "position": 7,
+        "semantic": "entry_price",
+        "target_type": "float64"
+      },
+      {
+        "position": 8,
+        "semantic": "contracts",
+        "target_type": "float64"
+      },
+      {
+        "position": 9,
+        "semantic": "position_value",
+        "target_type": "float64"
+      },
+      {
+        "position": 10,
+        "semantic": "net_pnl",
+        "target_type": "float64"
+      },
+      {
+        "position": 11,
+        "semantic": "net_pnl_pct",
+        "target_type": "float64"
+      },
+      {
+        "position": 12,
+        "semantic": "max_runup",
+        "target_type": "float64"
+      },
+      {
+        "position": 13,
+        "semantic": "max_runup_pct",
+        "target_type": "float64"
+      },
+      {
+        "position": 14,
+        "semantic": "max_drawdown",
+        "target_type": "float64"
+      },
+      {
+        "position": 15,
+        "semantic": "max_drawdown_pct",
+        "target_type": "float64"
+      },
+      {
+        "position": 16,
+        "semantic": "cumulative_pnl",
+        "target_type": "float64"
+      },
+      {
+        "position": 17,
+        "semantic": "cumulative_pnl_pct",
+        "target_type": "float64"
+      },
+      {
+        "position": 18,
+        "semantic": "bars_in_trade",
+        "target_type": "int64"
+      },
+      {
+        "position": 19,
+        "semantic": "short_marker",
+        "target_type": "category"
+      }
+    ],
+    "schema_21_columns": [
+      {
+        "position": 0,
+        "semantic": "trade_id",
+        "target_type": "int64"
+      },
+      {
+        "position": 1,
+        "semantic": "long_marker",
+        "target_type": "category"
+      },
+      {
+        "position": 2,
+        "semantic": "exit_timestamp",
+        "target_type": "datetime_with_explicit_timezone"
+      },
+      {
+        "position": 3,
+        "semantic": "entry_timestamp",
+        "target_type": "datetime_with_explicit_timezone"
+      },
+      {
+        "position": 4,
+        "semantic": "event_label_a",
+        "target_type": "string"
+      },
+      {
+        "position": 5,
+        "semantic": "event_label_b",
+        "target_type": "string"
+      },
+      {
+        "position": 6,
+        "semantic": "exit_price",
+        "target_type": "float64"
+      },
+      {
+        "position": 7,
+        "semantic": "entry_price",
+        "target_type": "float64"
+      },
+      {
+        "position": 8,
+        "semantic": "contracts",
+        "target_type": "float64"
+      },
+      {
+        "position": 9,
+        "semantic": "position_value",
+        "target_type": "float64"
+      },
+      {
+        "position": 10,
+        "semantic": "net_pnl",
+        "target_type": "float64"
+      },
+      {
+        "position": 11,
+        "semantic": "net_pnl_pct",
+        "target_type": "float64"
+      },
+      {
+        "position": 12,
+        "semantic": "probable_commission_unconfirmed",
+        "target_type": "float64"
+      },
+      {
+        "position": 13,
+        "semantic": "max_runup",
+        "target_type": "float64"
+      },
+      {
+        "position": 14,
+        "semantic": "max_runup_pct",
+        "target_type": "float64"
+      },
+      {
+        "position": 15,
+        "semantic": "max_drawdown",
+        "target_type": "float64"
+      },
+      {
+        "position": 16,
+        "semantic": "max_drawdown_pct",
+        "target_type": "float64"
+      },
+      {
+        "position": 17,
+        "semantic": "cumulative_pnl",
+        "target_type": "float64"
+      },
+      {
+        "position": 18,
+        "semantic": "cumulative_pnl_pct",
+        "target_type": "float64"
+      },
+      {
+        "position": 19,
+        "semantic": "bars_in_trade",
+        "target_type": "int64"
+      },
+      {
+        "position": 20,
+        "semantic": "short_marker",
+        "target_type": "category"
+      }
+    ],
+    "inconsistency": "tf4jam.csv and tf1hari.csv have 21 columns; six files have 20",
+    "signal_warning": "tf1jam signal-label orientation differs from the other files",
+    "malformed_warning": "zero-PnL rows in 4h and 1D shift percentage/excursion cells"
+  },
+  "aggregate": {
+    "csv_files": 8,
+    "raw_rows_total": 918,
+    "semantic_unique_rows_across_files": 325,
+    "cross_file_duplicate_occurrences": 593,
+    "cross_file_duplicate_share_pct": 64.5969,
+    "target_segment_candidate_rows": 325,
+    "target_segment_candidate_closed_rows": 324,
+    "duplicate_trade_id_occurrences_within_files": 420,
+    "full_duplicate_rows_within_each_file": 0,
+    "semantically_malformed_target_rows": 2,
+    "secondary_pdf_claimed_total_trades_sum": 2438,
+    "pdf_and_csv_snapshots_reconciled": false
+  },
+  "datasets": [
+    {
+      "filename": "tf15menit.csv",
+      "declared_timeframe_from_filename": "15m",
+      "nominal_timeframe_minutes": 15,
+      "file_size_bytes": 18564,
+      "sha256": "16667494626d0e37fd2f0fc38dba67bd153d8100da83871ac9c3bc8fd36bd479",
+      "row_count": 91,
+      "column_count": 20,
+      "raw_columns": [
+        "tradeNumber-cFqG8Z0J",
+        "long-cFqG8Z0J",
+        "cell-EOHtcR6g 3",
+        "cell-EOHtcR6g 4",
+        "rowContent-Wp3SuuZ_",
+        "rowContent-Wp3SuuZ_ 2",
+        "value-COAm5E_5",
+        "value-COAm5E_5 2",
+        "positionSize-JoU6mm3y",
+        "positionSize-JoU6mm3y 2",
+        "value-COAm5E_5 3",
+        "value-COAm5E_5 4",
+        "value-COAm5E_5 6",
+        "percentValue-COAm5E_5",
+        "value-COAm5E_5 7",
+        "percentValue-COAm5E_5 2",
+        "value-COAm5E_5 8",
+        "percentValue-COAm5E_5 3",
+        "ka-cell",
+        "short-cFqG8Z0J"
+      ],
+      "pandas_inferred_dtypes": {
+        "tradeNumber-cFqG8Z0J": "int64",
+        "long-cFqG8Z0J": "object",
+        "cell-EOHtcR6g 3": "object",
+        "cell-EOHtcR6g 4": "object",
+        "rowContent-Wp3SuuZ_": "object",
+        "rowContent-Wp3SuuZ_ 2": "object",
+        "value-COAm5E_5": "object",
+        "value-COAm5E_5 2": "object",
+        "positionSize-JoU6mm3y": "float64",
+        "positionSize-JoU6mm3y 2": "float64",
+        "value-COAm5E_5 3": "object",
+        "value-COAm5E_5 4": "object",
+        "value-COAm5E_5 6": "float64",
+        "percentValue-COAm5E_5": "object",
+        "value-COAm5E_5 7": "object",
+        "percentValue-COAm5E_5 2": "object",
+        "value-COAm5E_5 8": "object",
+        "percentValue-COAm5E_5 3": "object",
+        "ka-cell": "int64",
+        "short-cFqG8Z0J": "object"
+      },
+      "trade_structure": "one combined row per trade; exit timestamp/price precede entry timestamp/price",
+      "entry_exit_representation": {
+        "timestamp_price_order": "exit_then_entry",
+        "signal_column_orientation": "A mostly Exit/status, B mostly MX; reversal labels remain ambiguous",
+        "event_label_a_counts": {
+          "Exit SELL": 52,
+          "Exit BUY": 36,
+          "MX BUY": 3
+        },
+        "event_label_b_counts": {
+          "MX SELL": 55,
+          "MX BUY": 36
+        },
+        "direction_encoding": "exactly one sparse long/short marker is populated",
+        "open_positions": 0
+      },
+      "pnl_format": {
+        "net_pnl": "signed text; gains use +, losses use U+2212 minus, zero is plain 0",
+        "net_pnl_pct": "signed percentage text",
+        "position_value": "decimal text; 1m also uses U+202F narrow-space K suffix",
+        "examples": {
+          "net_pnl": [
+            "+0.91",
+            "+1.406",
+            "+0.793",
+            "+1.178",
+            "−0.923"
+          ],
+          "net_pnl_pct": [
+            "+0.18%",
+            "+0.31%",
+            "+0.17%",
+            "+0.20%",
+            "−0.17%"
+          ]
+        }
+      },
+      "timestamp_format": {
+        "observed": {
+          "MMM D, YYYY, HH:MM": 182
+        },
+        "timezone_present": false,
+        "custom_parser_failures": 0,
+        "pandas_default_parser_failures": 0
+      },
+      "missing_values": {
+        "by_raw_column": {
+          "long-cFqG8Z0J": 55,
+          "short-cFqG8Z0J": 36
+        },
+        "expected_sparse_direction_missing_cells": 91,
+        "unexpected_missing_cells": 0
+      },
+      "duplicates": {
+        "full_duplicate_rows_within_file": 0,
+        "duplicate_trade_id_occurrences": 28,
+        "unique_trade_ids": 63
+      },
+      "trade_id_coverage": {
+        "min": 1,
+        "max": 229,
+        "ranges": [
+          "229-197",
+          "30-1"
+        ],
+        "missing_ids_within_min_max": 166,
+        "sequence_complete": false
+      },
+      "segments": [
+        {
+          "segment_number": 1,
+          "csv_row_start": 2,
+          "csv_row_end": 62,
+          "row_count": 61,
+          "trade_id_first": 229,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "229-197",
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 5.0,
+          "inferred_timeframe": "5m",
+          "matches_filename_timeframe": false,
+          "entry_timestamp_min": "2026-07-27T10:45",
+          "exit_timestamp_max": "2026-08-21T11:05"
+        },
+        {
+          "segment_number": 2,
+          "csv_row_start": 63,
+          "csv_row_end": 92,
+          "row_count": 30,
+          "trade_id_first": 30,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "30-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 15.0,
+          "inferred_timeframe": "15m",
+          "matches_filename_timeframe": true,
+          "entry_timestamp_min": "2026-06-02T02:45",
+          "exit_timestamp_max": "2026-06-11T00:15"
+        }
+      ],
+      "target_segment_candidate": {
+        "selection_rule": "last descending-ID segment; requires external provenance confirmation",
+        "segment_number": 2,
+        "row_count": 30,
+        "closed_row_count": 30,
+        "inferred_timeframe": "15m"
+      },
+      "quality_checks": {
+        "side_invalid_rows": 0,
+        "numeric_parse_failures": {
+          "exit_price": 0,
+          "entry_price": 0,
+          "contracts": 0,
+          "position_value": 0,
+          "net_pnl": 0,
+          "net_pnl_pct": 0,
+          "max_runup": 0,
+          "max_runup_pct": 0,
+          "max_drawdown": 0,
+          "max_drawdown_pct": 0,
+          "cumulative_pnl": 0,
+          "cumulative_pnl_pct": 0,
+          "bars_in_trade": 0
+        },
+        "nonpositive_price_rows": 0,
+        "nonpositive_contract_rows": 0,
+        "negative_bars_rows": 0,
+        "exit_before_entry_rows": 0,
+        "directional_pnl_mismatch_rows_tolerance_0_0021": 0,
+        "directional_pnl_max_abs_error": 0.0005000000000145999,
+        "semantically_malformed_rows": []
+      },
+      "secondary_pdf_claimed_total_trades": 222,
+      "secondary_pdf_snapshot_consistent_with_csv": false,
+      "analysis_readiness": "BLOCKED"
+    },
+    {
+      "filename": "tf1hari.csv",
+      "declared_timeframe_from_filename": "1D",
+      "nominal_timeframe_minutes": 1440,
+      "file_size_bytes": 41796,
+      "sha256": "cd586bb6be299ed9490eafc816f970e8ecced562494858264e5934ee9c43390d",
+      "row_count": 203,
+      "column_count": 21,
+      "raw_columns": [
+        "tradeNumber-cFqG8Z0J",
+        "long-cFqG8Z0J",
+        "cell-EOHtcR6g 3",
+        "cell-EOHtcR6g 4",
+        "rowContent-Wp3SuuZ_",
+        "rowContent-Wp3SuuZ_ 2",
+        "value-COAm5E_5",
+        "value-COAm5E_5 2",
+        "positionSize-JoU6mm3y",
+        "positionSize-JoU6mm3y 2",
+        "value-COAm5E_5 3",
+        "value-COAm5E_5 4",
+        "value-COAm5E_5 5",
+        "value-COAm5E_5 6",
+        "percentValue-COAm5E_5",
+        "value-COAm5E_5 7",
+        "percentValue-COAm5E_5 2",
+        "value-COAm5E_5 8",
+        "percentValue-COAm5E_5 3",
+        "ka-cell",
+        "short-cFqG8Z0J"
+      ],
+      "pandas_inferred_dtypes": {
+        "tradeNumber-cFqG8Z0J": "int64",
+        "long-cFqG8Z0J": "object",
+        "cell-EOHtcR6g 3": "object",
+        "cell-EOHtcR6g 4": "object",
+        "rowContent-Wp3SuuZ_": "object",
+        "rowContent-Wp3SuuZ_ 2": "object",
+        "value-COAm5E_5": "object",
+        "value-COAm5E_5 2": "object",
+        "positionSize-JoU6mm3y": "float64",
+        "positionSize-JoU6mm3y 2": "float64",
+        "value-COAm5E_5 3": "object",
+        "value-COAm5E_5 4": "object",
+        "value-COAm5E_5 5": "float64",
+        "value-COAm5E_5 6": "object",
+        "percentValue-COAm5E_5": "object",
+        "value-COAm5E_5 7": "object",
+        "percentValue-COAm5E_5 2": "object",
+        "value-COAm5E_5 8": "object",
+        "percentValue-COAm5E_5 3": "object",
+        "ka-cell": "int64",
+        "short-cFqG8Z0J": "object"
+      },
+      "trade_structure": "one combined row per trade; exit timestamp/price precede entry timestamp/price",
+      "entry_exit_representation": {
+        "timestamp_price_order": "exit_then_entry",
+        "signal_column_orientation": "A mostly Exit/status, B mostly MX; reversal labels remain ambiguous",
+        "event_label_a_counts": {
+          "Exit BUY": 101,
+          "Exit SELL": 96,
+          "MX BUY": 4,
+          "MX SELL": 2
+        },
+        "event_label_b_counts": {
+          "MX BUY": 103,
+          "MX SELL": 100
+        },
+        "direction_encoding": "exactly one sparse long/short marker is populated",
+        "open_positions": 0
+      },
+      "pnl_format": {
+        "net_pnl": "signed text; gains use +, losses use U+2212 minus, zero is plain 0",
+        "net_pnl_pct": "signed percentage text",
+        "position_value": "decimal text; 1m also uses U+202F narrow-space K suffix",
+        "examples": {
+          "net_pnl": [
+            "+0.91",
+            "+1.406",
+            "+0.793",
+            "+1.178",
+            "−0.923"
+          ],
+          "net_pnl_pct": [
+            "+0.18%",
+            "+0.31%",
+            "+0.17%",
+            "+0.20%",
+            "−0.17%"
+          ]
+        }
+      },
+      "timestamp_format": {
+        "observed": {
+          "MMM D, YYYY, HH:MM": 350,
+          "MMM D, YYYY": 56
+        },
+        "timezone_present": false,
+        "custom_parser_failures": 0,
+        "pandas_default_parser_failures": 56
+      },
+      "missing_values": {
+        "by_raw_column": {
+          "long-cFqG8Z0J": 100,
+          "short-cFqG8Z0J": 103
+        },
+        "expected_sparse_direction_missing_cells": 203,
+        "unexpected_missing_cells": 0
+      },
+      "duplicates": {
+        "full_duplicate_rows_within_file": 0,
+        "duplicate_trade_id_occurrences": 140,
+        "unique_trade_ids": 63
+      },
+      "trade_id_coverage": {
+        "min": 1,
+        "max": 229,
+        "ranges": [
+          "229-197",
+          "30-1"
+        ],
+        "missing_ids_within_min_max": 166,
+        "sequence_complete": false
+      },
+      "segments": [
+        {
+          "segment_number": 1,
+          "csv_row_start": 2,
+          "csv_row_end": 62,
+          "row_count": 61,
+          "trade_id_first": 229,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "229-197",
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 5.0,
+          "inferred_timeframe": "5m",
+          "matches_filename_timeframe": false,
+          "entry_timestamp_min": "2026-07-27T10:45",
+          "exit_timestamp_max": "2026-08-21T11:05"
+        },
+        {
+          "segment_number": 2,
+          "csv_row_start": 63,
+          "csv_row_end": 92,
+          "row_count": 30,
+          "trade_id_first": 30,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "30-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 15.0,
+          "inferred_timeframe": "15m",
+          "matches_filename_timeframe": false,
+          "entry_timestamp_min": "2026-06-02T02:45",
+          "exit_timestamp_max": "2026-06-11T00:15"
+        },
+        {
+          "segment_number": 3,
+          "csv_row_start": 93,
+          "csv_row_end": 120,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 30.0,
+          "inferred_timeframe": "30m",
+          "matches_filename_timeframe": false,
+          "entry_timestamp_min": "2026-01-07T17:30",
+          "exit_timestamp_max": "2026-01-26T06:30"
+        },
+        {
+          "segment_number": 4,
+          "csv_row_start": 121,
+          "csv_row_end": 148,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 120.0,
+          "inferred_timeframe": "2h",
+          "matches_filename_timeframe": false,
+          "entry_timestamp_min": "2025-01-15T18:00",
+          "exit_timestamp_max": "2025-02-28T04:00"
+        },
+        {
+          "segment_number": 5,
+          "csv_row_start": 149,
+          "csv_row_end": 176,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 240.0,
+          "inferred_timeframe": "4h",
+          "matches_filename_timeframe": false,
+          "entry_timestamp_min": "2023-01-26T18:00",
+          "exit_timestamp_max": "2023-06-15T09:00"
+        },
+        {
+          "segment_number": 6,
+          "csv_row_start": 177,
+          "csv_row_end": 204,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 2160.0,
+          "inferred_timeframe": "1D",
+          "matches_filename_timeframe": true,
+          "entry_timestamp_min": "1975-01-03T00:00",
+          "exit_timestamp_max": "1977-12-23T00:00"
+        }
+      ],
+      "target_segment_candidate": {
+        "selection_rule": "last descending-ID segment; requires external provenance confirmation",
+        "segment_number": 6,
+        "row_count": 28,
+        "closed_row_count": 28,
+        "inferred_timeframe": "1D"
+      },
+      "quality_checks": {
+        "side_invalid_rows": 0,
+        "numeric_parse_failures": {
+          "exit_price": 0,
+          "entry_price": 0,
+          "contracts": 0,
+          "position_value": 0,
+          "net_pnl": 0,
+          "net_pnl_pct": 0,
+          "max_runup": 0,
+          "max_runup_pct": 0,
+          "max_drawdown": 0,
+          "max_drawdown_pct": 0,
+          "cumulative_pnl": 0,
+          "cumulative_pnl_pct": 0,
+          "bars_in_trade": 0,
+          "probable_commission": 0
+        },
+        "nonpositive_price_rows": 0,
+        "nonpositive_contract_rows": 0,
+        "negative_bars_rows": 0,
+        "exit_before_entry_rows": 0,
+        "directional_pnl_mismatch_rows_tolerance_0_0021": 0,
+        "directional_pnl_max_abs_error": 0.0005000000000145999,
+        "semantically_malformed_rows": [
+          {
+            "source_row": 161,
+            "trade_id": 16,
+            "reason": "net_pnl_pct is not a percentage token; downstream cells are shifted",
+            "raw_values_from_net_pnl": [
+              "0",
+              "7.187",
+              "0",
+              "0.00%",
+              "0.00%",
+              "0.000",
+              "0.00%",
+              "0",
+              "17.97%",
+              "0",
+              null
+            ]
+          },
+          {
+            "source_row": 188,
+            "trade_id": 17,
+            "reason": "net_pnl_pct is not a percentage token; downstream cells are shifted",
+            "raw_values_from_net_pnl": [
+              "0",
+              "3.611",
+              "0",
+              "0.00%",
+              "0.00%",
+              "0.000",
+              "0.00%",
+              "0",
+              "9.03%",
+              "0",
+              null
+            ]
+          }
+        ]
+      },
+      "secondary_pdf_claimed_total_trades": 496,
+      "secondary_pdf_snapshot_consistent_with_csv": false,
+      "analysis_readiness": "BLOCKED"
+    },
+    {
+      "filename": "tf1jam.csv",
+      "declared_timeframe_from_filename": "1h",
+      "nominal_timeframe_minutes": 60,
+      "file_size_bytes": 12517,
+      "sha256": "54b744781136c5182a7cc0172abab263421198ed6da7806bfed89b426c4eade2",
+      "row_count": 61,
+      "column_count": 20,
+      "raw_columns": [
+        "tradeNumber-cFqG8Z0J",
+        "long-cFqG8Z0J",
+        "cell-EOHtcR6g 3",
+        "cell-EOHtcR6g 4",
+        "rowContent-Wp3SuuZ_",
+        "rowContent-Wp3SuuZ_ 2",
+        "value-COAm5E_5",
+        "value-COAm5E_5 2",
+        "positionSize-JoU6mm3y",
+        "positionSize-JoU6mm3y 2",
+        "value-COAm5E_5 3",
+        "value-COAm5E_5 4",
+        "value-COAm5E_5 6",
+        "percentValue-COAm5E_5",
+        "value-COAm5E_5 7",
+        "percentValue-COAm5E_5 2",
+        "value-COAm5E_5 8",
+        "percentValue-COAm5E_5 3",
+        "ka-cell",
+        "short-cFqG8Z0J"
+      ],
+      "pandas_inferred_dtypes": {
+        "tradeNumber-cFqG8Z0J": "int64",
+        "long-cFqG8Z0J": "object",
+        "cell-EOHtcR6g 3": "object",
+        "cell-EOHtcR6g 4": "object",
+        "rowContent-Wp3SuuZ_": "object",
+        "rowContent-Wp3SuuZ_ 2": "object",
+        "value-COAm5E_5": "object",
+        "value-COAm5E_5 2": "object",
+        "positionSize-JoU6mm3y": "float64",
+        "positionSize-JoU6mm3y 2": "float64",
+        "value-COAm5E_5 3": "object",
+        "value-COAm5E_5 4": "object",
+        "value-COAm5E_5 6": "float64",
+        "percentValue-COAm5E_5": "object",
+        "value-COAm5E_5 7": "object",
+        "percentValue-COAm5E_5 2": "object",
+        "value-COAm5E_5 8": "float64",
+        "percentValue-COAm5E_5 3": "object",
+        "ka-cell": "int64",
+        "short-cFqG8Z0J": "object"
+      },
+      "trade_structure": "one combined row per trade; exit timestamp/price precede entry timestamp/price",
+      "entry_exit_representation": {
+        "timestamp_price_order": "exit_then_entry",
+        "signal_column_orientation": "event labels appear swapped: A mostly MX, B mostly Exit",
+        "event_label_a_counts": {
+          "MX BUY": 43,
+          "MX SELL": 17,
+          "Open": 1
+        },
+        "event_label_b_counts": {
+          "Exit BUY": 40,
+          "Exit SELL": 15,
+          "MX BUY": 3,
+          "MX SELL": 3
+        },
+        "direction_encoding": "exactly one sparse long/short marker is populated",
+        "open_positions": 1
+      },
+      "pnl_format": {
+        "net_pnl": "signed text; gains use +, losses use U+2212 minus, zero is plain 0",
+        "net_pnl_pct": "signed percentage text",
+        "position_value": "decimal text; 1m also uses U+202F narrow-space K suffix",
+        "examples": {
+          "net_pnl": [
+            "−0.031",
+            "+1.063",
+            "+0.922",
+            "+1.084",
+            "−0.452"
+          ],
+          "net_pnl_pct": [
+            "−0.02%",
+            "+0.78%",
+            "+0.68%",
+            "+0.81%",
+            "−0.50%"
+          ]
+        }
+      },
+      "timestamp_format": {
+        "observed": {
+          "MMM D, YYYY, HH:MM": 122
+        },
+        "timezone_present": false,
+        "custom_parser_failures": 0,
+        "pandas_default_parser_failures": 0
+      },
+      "missing_values": {
+        "by_raw_column": {
+          "long-cFqG8Z0J": 17,
+          "short-cFqG8Z0J": 44
+        },
+        "expected_sparse_direction_missing_cells": 61,
+        "unexpected_missing_cells": 0
+      },
+      "duplicates": {
+        "full_duplicate_rows_within_file": 0,
+        "duplicate_trade_id_occurrences": 0,
+        "unique_trade_ids": 61
+      },
+      "trade_id_coverage": {
+        "min": 1,
+        "max": 432,
+        "ranges": [
+          "432-400",
+          "28-1"
+        ],
+        "missing_ids_within_min_max": 371,
+        "sequence_complete": false
+      },
+      "segments": [
+        {
+          "segment_number": 1,
+          "csv_row_start": 2,
+          "csv_row_end": 62,
+          "row_count": 61,
+          "trade_id_first": 432,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "432-400",
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 60.0,
+          "inferred_timeframe": "1h",
+          "matches_filename_timeframe": true,
+          "entry_timestamp_min": "2025-01-09T01:00",
+          "exit_timestamp_max": "2026-08-21T12:03"
+        }
+      ],
+      "target_segment_candidate": {
+        "selection_rule": "last descending-ID segment; requires external provenance confirmation",
+        "segment_number": 1,
+        "row_count": 61,
+        "closed_row_count": 60,
+        "inferred_timeframe": "1h"
+      },
+      "quality_checks": {
+        "side_invalid_rows": 0,
+        "numeric_parse_failures": {
+          "exit_price": 0,
+          "entry_price": 0,
+          "contracts": 0,
+          "position_value": 0,
+          "net_pnl": 0,
+          "net_pnl_pct": 0,
+          "max_runup": 0,
+          "max_runup_pct": 0,
+          "max_drawdown": 0,
+          "max_drawdown_pct": 0,
+          "cumulative_pnl": 0,
+          "cumulative_pnl_pct": 0,
+          "bars_in_trade": 0
+        },
+        "nonpositive_price_rows": 0,
+        "nonpositive_contract_rows": 0,
+        "negative_bars_rows": 0,
+        "exit_before_entry_rows": 0,
+        "directional_pnl_mismatch_rows_tolerance_0_0021": 0,
+        "directional_pnl_max_abs_error": 0.000500000000005496,
+        "semantically_malformed_rows": []
+      },
+      "secondary_pdf_claimed_total_trades": 429,
+      "secondary_pdf_snapshot_consistent_with_csv": false,
+      "analysis_readiness": "BLOCKED"
+    },
+    {
+      "filename": "tf1menit.csv",
+      "declared_timeframe_from_filename": "1m",
+      "nominal_timeframe_minutes": 1,
+      "file_size_bytes": 12574,
+      "sha256": "2ea89b322c420a6fbb936c4a0ba7e8d05c900e7833b0daef1609cc31234bc50a",
+      "row_count": 61,
+      "column_count": 20,
+      "raw_columns": [
+        "tradeNumber-cFqG8Z0J",
+        "long-cFqG8Z0J",
+        "cell-EOHtcR6g 3",
+        "cell-EOHtcR6g 4",
+        "rowContent-Wp3SuuZ_",
+        "rowContent-Wp3SuuZ_ 2",
+        "value-COAm5E_5",
+        "value-COAm5E_5 2",
+        "positionSize-JoU6mm3y",
+        "positionSize-JoU6mm3y 2",
+        "value-COAm5E_5 3",
+        "value-COAm5E_5 4",
+        "value-COAm5E_5 6",
+        "percentValue-COAm5E_5",
+        "value-COAm5E_5 7",
+        "percentValue-COAm5E_5 2",
+        "value-COAm5E_5 8",
+        "percentValue-COAm5E_5 3",
+        "ka-cell",
+        "short-cFqG8Z0J"
+      ],
+      "pandas_inferred_dtypes": {
+        "tradeNumber-cFqG8Z0J": "int64",
+        "long-cFqG8Z0J": "object",
+        "cell-EOHtcR6g 3": "object",
+        "cell-EOHtcR6g 4": "object",
+        "rowContent-Wp3SuuZ_": "object",
+        "rowContent-Wp3SuuZ_ 2": "object",
+        "value-COAm5E_5": "object",
+        "value-COAm5E_5 2": "object",
+        "positionSize-JoU6mm3y": "float64",
+        "positionSize-JoU6mm3y 2": "object",
+        "value-COAm5E_5 3": "object",
+        "value-COAm5E_5 4": "object",
+        "value-COAm5E_5 6": "float64",
+        "percentValue-COAm5E_5": "object",
+        "value-COAm5E_5 7": "object",
+        "percentValue-COAm5E_5 2": "object",
+        "value-COAm5E_5 8": "object",
+        "percentValue-COAm5E_5 3": "object",
+        "ka-cell": "int64",
+        "short-cFqG8Z0J": "object"
+      },
+      "trade_structure": "one combined row per trade; exit timestamp/price precede entry timestamp/price",
+      "entry_exit_representation": {
+        "timestamp_price_order": "exit_then_entry",
+        "signal_column_orientation": "A mostly Exit/status, B mostly MX; reversal labels remain ambiguous",
+        "event_label_a_counts": {
+          "Exit BUY": 37,
+          "Exit SELL": 21,
+          "MX SELL": 2,
+          "MX BUY": 1
+        },
+        "event_label_b_counts": {
+          "MX BUY": 39,
+          "MX SELL": 22
+        },
+        "direction_encoding": "exactly one sparse long/short marker is populated",
+        "open_positions": 0
+      },
+      "pnl_format": {
+        "net_pnl": "signed text; gains use +, losses use U+2212 minus, zero is plain 0",
+        "net_pnl_pct": "signed percentage text",
+        "position_value": "decimal text; 1m also uses U+202F narrow-space K suffix",
+        "examples": {
+          "net_pnl": [
+            "−0.801",
+            "−0.823",
+            "+1.201",
+            "+0.933",
+            "+0.859"
+          ],
+          "net_pnl_pct": [
+            "−0.08%",
+            "−0.09%",
+            "+0.11%",
+            "+0.09%",
+            "+0.09%"
+          ]
+        }
+      },
+      "timestamp_format": {
+        "observed": {
+          "MMM D, YYYY, HH:MM": 122
+        },
+        "timezone_present": false,
+        "custom_parser_failures": 0,
+        "pandas_default_parser_failures": 0
+      },
+      "missing_values": {
+        "by_raw_column": {
+          "long-cFqG8Z0J": 22,
+          "short-cFqG8Z0J": 39
+        },
+        "expected_sparse_direction_missing_cells": 61,
+        "unexpected_missing_cells": 0
+      },
+      "duplicates": {
+        "full_duplicate_rows_within_file": 0,
+        "duplicate_trade_id_occurrences": 0,
+        "unique_trade_ids": 61
+      },
+      "trade_id_coverage": {
+        "min": 1,
+        "max": 273,
+        "ranges": [
+          "273-241",
+          "28-1"
+        ],
+        "missing_ids_within_min_max": 212,
+        "sequence_complete": false
+      },
+      "segments": [
+        {
+          "segment_number": 1,
+          "csv_row_start": 2,
+          "csv_row_end": 62,
+          "row_count": 61,
+          "trade_id_first": 273,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "273-241",
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 1.0,
+          "inferred_timeframe": "1m",
+          "matches_filename_timeframe": true,
+          "entry_timestamp_min": "2026-08-16T23:45",
+          "exit_timestamp_max": "2026-08-21T06:59"
+        }
+      ],
+      "target_segment_candidate": {
+        "selection_rule": "last descending-ID segment; requires external provenance confirmation",
+        "segment_number": 1,
+        "row_count": 61,
+        "closed_row_count": 61,
+        "inferred_timeframe": "1m"
+      },
+      "quality_checks": {
+        "side_invalid_rows": 0,
+        "numeric_parse_failures": {
+          "exit_price": 0,
+          "entry_price": 0,
+          "contracts": 0,
+          "position_value": 0,
+          "net_pnl": 0,
+          "net_pnl_pct": 0,
+          "max_runup": 0,
+          "max_runup_pct": 0,
+          "max_drawdown": 0,
+          "max_drawdown_pct": 0,
+          "cumulative_pnl": 0,
+          "cumulative_pnl_pct": 0,
+          "bars_in_trade": 0
+        },
+        "nonpositive_price_rows": 0,
+        "nonpositive_contract_rows": 0,
+        "negative_bars_rows": 0,
+        "exit_before_entry_rows": 0,
+        "directional_pnl_mismatch_rows_tolerance_0_0021": 0,
+        "directional_pnl_max_abs_error": 0.000500000000114631,
+        "semantically_malformed_rows": []
+      },
+      "secondary_pdf_claimed_total_trades": 262,
+      "secondary_pdf_snapshot_consistent_with_csv": false,
+      "analysis_readiness": "BLOCKED"
+    },
+    {
+      "filename": "tf2jam.csv",
+      "declared_timeframe_from_filename": "2h",
+      "nominal_timeframe_minutes": 120,
+      "file_size_bytes": 29653,
+      "sha256": "0d8b770a962ec816734400ea3ea5feef0b15812f3050a34418df3768471ff999",
+      "row_count": 147,
+      "column_count": 20,
+      "raw_columns": [
+        "tradeNumber-cFqG8Z0J",
+        "long-cFqG8Z0J",
+        "cell-EOHtcR6g 3",
+        "cell-EOHtcR6g 4",
+        "rowContent-Wp3SuuZ_",
+        "rowContent-Wp3SuuZ_ 2",
+        "value-COAm5E_5",
+        "value-COAm5E_5 2",
+        "positionSize-JoU6mm3y",
+        "positionSize-JoU6mm3y 2",
+        "value-COAm5E_5 3",
+        "value-COAm5E_5 4",
+        "value-COAm5E_5 6",
+        "percentValue-COAm5E_5",
+        "value-COAm5E_5 7",
+        "percentValue-COAm5E_5 2",
+        "value-COAm5E_5 8",
+        "percentValue-COAm5E_5 3",
+        "ka-cell",
+        "short-cFqG8Z0J"
+      ],
+      "pandas_inferred_dtypes": {
+        "tradeNumber-cFqG8Z0J": "int64",
+        "long-cFqG8Z0J": "object",
+        "cell-EOHtcR6g 3": "object",
+        "cell-EOHtcR6g 4": "object",
+        "rowContent-Wp3SuuZ_": "object",
+        "rowContent-Wp3SuuZ_ 2": "object",
+        "value-COAm5E_5": "object",
+        "value-COAm5E_5 2": "object",
+        "positionSize-JoU6mm3y": "float64",
+        "positionSize-JoU6mm3y 2": "float64",
+        "value-COAm5E_5 3": "object",
+        "value-COAm5E_5 4": "object",
+        "value-COAm5E_5 6": "float64",
+        "percentValue-COAm5E_5": "object",
+        "value-COAm5E_5 7": "object",
+        "percentValue-COAm5E_5 2": "object",
+        "value-COAm5E_5 8": "object",
+        "percentValue-COAm5E_5 3": "object",
+        "ka-cell": "int64",
+        "short-cFqG8Z0J": "object"
+      },
+      "trade_structure": "one combined row per trade; exit timestamp/price precede entry timestamp/price",
+      "entry_exit_representation": {
+        "timestamp_price_order": "exit_then_entry",
+        "signal_column_orientation": "A mostly Exit/status, B mostly MX; reversal labels remain ambiguous",
+        "event_label_a_counts": {
+          "Exit BUY": 77,
+          "Exit SELL": 66,
+          "MX BUY": 3,
+          "MX SELL": 1
+        },
+        "event_label_b_counts": {
+          "MX BUY": 78,
+          "MX SELL": 69
+        },
+        "direction_encoding": "exactly one sparse long/short marker is populated",
+        "open_positions": 0
+      },
+      "pnl_format": {
+        "net_pnl": "signed text; gains use +, losses use U+2212 minus, zero is plain 0",
+        "net_pnl_pct": "signed percentage text",
+        "position_value": "decimal text; 1m also uses U+202F narrow-space K suffix",
+        "examples": {
+          "net_pnl": [
+            "+0.91",
+            "+1.406",
+            "+0.793",
+            "+1.178",
+            "−0.923"
+          ],
+          "net_pnl_pct": [
+            "+0.18%",
+            "+0.31%",
+            "+0.17%",
+            "+0.20%",
+            "−0.17%"
+          ]
+        }
+      },
+      "timestamp_format": {
+        "observed": {
+          "MMM D, YYYY, HH:MM": 294
+        },
+        "timezone_present": false,
+        "custom_parser_failures": 0,
+        "pandas_default_parser_failures": 0
+      },
+      "missing_values": {
+        "by_raw_column": {
+          "long-cFqG8Z0J": 69,
+          "short-cFqG8Z0J": 78
+        },
+        "expected_sparse_direction_missing_cells": 147,
+        "unexpected_missing_cells": 0
+      },
+      "duplicates": {
+        "full_duplicate_rows_within_file": 0,
+        "duplicate_trade_id_occurrences": 84,
+        "unique_trade_ids": 63
+      },
+      "trade_id_coverage": {
+        "min": 1,
+        "max": 229,
+        "ranges": [
+          "229-197",
+          "30-1"
+        ],
+        "missing_ids_within_min_max": 166,
+        "sequence_complete": false
+      },
+      "segments": [
+        {
+          "segment_number": 1,
+          "csv_row_start": 2,
+          "csv_row_end": 62,
+          "row_count": 61,
+          "trade_id_first": 229,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "229-197",
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 5.0,
+          "inferred_timeframe": "5m",
+          "matches_filename_timeframe": false,
+          "entry_timestamp_min": "2026-07-27T10:45",
+          "exit_timestamp_max": "2026-08-21T11:05"
+        },
+        {
+          "segment_number": 2,
+          "csv_row_start": 63,
+          "csv_row_end": 92,
+          "row_count": 30,
+          "trade_id_first": 30,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "30-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 15.0,
+          "inferred_timeframe": "15m",
+          "matches_filename_timeframe": false,
+          "entry_timestamp_min": "2026-06-02T02:45",
+          "exit_timestamp_max": "2026-06-11T00:15"
+        },
+        {
+          "segment_number": 3,
+          "csv_row_start": 93,
+          "csv_row_end": 120,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 30.0,
+          "inferred_timeframe": "30m",
+          "matches_filename_timeframe": false,
+          "entry_timestamp_min": "2026-01-07T17:30",
+          "exit_timestamp_max": "2026-01-26T06:30"
+        },
+        {
+          "segment_number": 4,
+          "csv_row_start": 121,
+          "csv_row_end": 148,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 120.0,
+          "inferred_timeframe": "2h",
+          "matches_filename_timeframe": true,
+          "entry_timestamp_min": "2025-01-15T18:00",
+          "exit_timestamp_max": "2025-02-28T04:00"
+        }
+      ],
+      "target_segment_candidate": {
+        "selection_rule": "last descending-ID segment; requires external provenance confirmation",
+        "segment_number": 4,
+        "row_count": 28,
+        "closed_row_count": 28,
+        "inferred_timeframe": "2h"
+      },
+      "quality_checks": {
+        "side_invalid_rows": 0,
+        "numeric_parse_failures": {
+          "exit_price": 0,
+          "entry_price": 0,
+          "contracts": 0,
+          "position_value": 0,
+          "net_pnl": 0,
+          "net_pnl_pct": 0,
+          "max_runup": 0,
+          "max_runup_pct": 0,
+          "max_drawdown": 0,
+          "max_drawdown_pct": 0,
+          "cumulative_pnl": 0,
+          "cumulative_pnl_pct": 0,
+          "bars_in_trade": 0
+        },
+        "nonpositive_price_rows": 0,
+        "nonpositive_contract_rows": 0,
+        "negative_bars_rows": 0,
+        "exit_before_entry_rows": 0,
+        "directional_pnl_mismatch_rows_tolerance_0_0021": 0,
+        "directional_pnl_max_abs_error": 0.0005000000000145999,
+        "semantically_malformed_rows": []
+      },
+      "secondary_pdf_claimed_total_trades": 227,
+      "secondary_pdf_snapshot_consistent_with_csv": false,
+      "analysis_readiness": "BLOCKED"
+    },
+    {
+      "filename": "tf30menit.csv",
+      "declared_timeframe_from_filename": "30m",
+      "nominal_timeframe_minutes": 30,
+      "file_size_bytes": 24131,
+      "sha256": "87d2ec3e5dc3a131d686bf64fbb49c03056726bfbac715f4867d0c4500d2d7aa",
+      "row_count": 119,
+      "column_count": 20,
+      "raw_columns": [
+        "tradeNumber-cFqG8Z0J",
+        "long-cFqG8Z0J",
+        "cell-EOHtcR6g 3",
+        "cell-EOHtcR6g 4",
+        "rowContent-Wp3SuuZ_",
+        "rowContent-Wp3SuuZ_ 2",
+        "value-COAm5E_5",
+        "value-COAm5E_5 2",
+        "positionSize-JoU6mm3y",
+        "positionSize-JoU6mm3y 2",
+        "value-COAm5E_5 3",
+        "value-COAm5E_5 4",
+        "value-COAm5E_5 6",
+        "percentValue-COAm5E_5",
+        "value-COAm5E_5 7",
+        "percentValue-COAm5E_5 2",
+        "value-COAm5E_5 8",
+        "percentValue-COAm5E_5 3",
+        "ka-cell",
+        "short-cFqG8Z0J"
+      ],
+      "pandas_inferred_dtypes": {
+        "tradeNumber-cFqG8Z0J": "int64",
+        "long-cFqG8Z0J": "object",
+        "cell-EOHtcR6g 3": "object",
+        "cell-EOHtcR6g 4": "object",
+        "rowContent-Wp3SuuZ_": "object",
+        "rowContent-Wp3SuuZ_ 2": "object",
+        "value-COAm5E_5": "object",
+        "value-COAm5E_5 2": "object",
+        "positionSize-JoU6mm3y": "float64",
+        "positionSize-JoU6mm3y 2": "float64",
+        "value-COAm5E_5 3": "object",
+        "value-COAm5E_5 4": "object",
+        "value-COAm5E_5 6": "float64",
+        "percentValue-COAm5E_5": "object",
+        "value-COAm5E_5 7": "object",
+        "percentValue-COAm5E_5 2": "object",
+        "value-COAm5E_5 8": "object",
+        "percentValue-COAm5E_5 3": "object",
+        "ka-cell": "int64",
+        "short-cFqG8Z0J": "object"
+      },
+      "trade_structure": "one combined row per trade; exit timestamp/price precede entry timestamp/price",
+      "entry_exit_representation": {
+        "timestamp_price_order": "exit_then_entry",
+        "signal_column_orientation": "A mostly Exit/status, B mostly MX; reversal labels remain ambiguous",
+        "event_label_a_counts": {
+          "Exit BUY": 58,
+          "Exit SELL": 58,
+          "MX BUY": 3
+        },
+        "event_label_b_counts": {
+          "MX SELL": 61,
+          "MX BUY": 58
+        },
+        "direction_encoding": "exactly one sparse long/short marker is populated",
+        "open_positions": 0
+      },
+      "pnl_format": {
+        "net_pnl": "signed text; gains use +, losses use U+2212 minus, zero is plain 0",
+        "net_pnl_pct": "signed percentage text",
+        "position_value": "decimal text; 1m also uses U+202F narrow-space K suffix",
+        "examples": {
+          "net_pnl": [
+            "+0.91",
+            "+1.406",
+            "+0.793",
+            "+1.178",
+            "−0.923"
+          ],
+          "net_pnl_pct": [
+            "+0.18%",
+            "+0.31%",
+            "+0.17%",
+            "+0.20%",
+            "−0.17%"
+          ]
+        }
+      },
+      "timestamp_format": {
+        "observed": {
+          "MMM D, YYYY, HH:MM": 238
+        },
+        "timezone_present": false,
+        "custom_parser_failures": 0,
+        "pandas_default_parser_failures": 0
+      },
+      "missing_values": {
+        "by_raw_column": {
+          "long-cFqG8Z0J": 61,
+          "short-cFqG8Z0J": 58
+        },
+        "expected_sparse_direction_missing_cells": 119,
+        "unexpected_missing_cells": 0
+      },
+      "duplicates": {
+        "full_duplicate_rows_within_file": 0,
+        "duplicate_trade_id_occurrences": 56,
+        "unique_trade_ids": 63
+      },
+      "trade_id_coverage": {
+        "min": 1,
+        "max": 229,
+        "ranges": [
+          "229-197",
+          "30-1"
+        ],
+        "missing_ids_within_min_max": 166,
+        "sequence_complete": false
+      },
+      "segments": [
+        {
+          "segment_number": 1,
+          "csv_row_start": 2,
+          "csv_row_end": 62,
+          "row_count": 61,
+          "trade_id_first": 229,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "229-197",
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 5.0,
+          "inferred_timeframe": "5m",
+          "matches_filename_timeframe": false,
+          "entry_timestamp_min": "2026-07-27T10:45",
+          "exit_timestamp_max": "2026-08-21T11:05"
+        },
+        {
+          "segment_number": 2,
+          "csv_row_start": 63,
+          "csv_row_end": 92,
+          "row_count": 30,
+          "trade_id_first": 30,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "30-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 15.0,
+          "inferred_timeframe": "15m",
+          "matches_filename_timeframe": false,
+          "entry_timestamp_min": "2026-06-02T02:45",
+          "exit_timestamp_max": "2026-06-11T00:15"
+        },
+        {
+          "segment_number": 3,
+          "csv_row_start": 93,
+          "csv_row_end": 120,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 30.0,
+          "inferred_timeframe": "30m",
+          "matches_filename_timeframe": true,
+          "entry_timestamp_min": "2026-01-07T17:30",
+          "exit_timestamp_max": "2026-01-26T06:30"
+        }
+      ],
+      "target_segment_candidate": {
+        "selection_rule": "last descending-ID segment; requires external provenance confirmation",
+        "segment_number": 3,
+        "row_count": 28,
+        "closed_row_count": 28,
+        "inferred_timeframe": "30m"
+      },
+      "quality_checks": {
+        "side_invalid_rows": 0,
+        "numeric_parse_failures": {
+          "exit_price": 0,
+          "entry_price": 0,
+          "contracts": 0,
+          "position_value": 0,
+          "net_pnl": 0,
+          "net_pnl_pct": 0,
+          "max_runup": 0,
+          "max_runup_pct": 0,
+          "max_drawdown": 0,
+          "max_drawdown_pct": 0,
+          "cumulative_pnl": 0,
+          "cumulative_pnl_pct": 0,
+          "bars_in_trade": 0
+        },
+        "nonpositive_price_rows": 0,
+        "nonpositive_contract_rows": 0,
+        "negative_bars_rows": 0,
+        "exit_before_entry_rows": 0,
+        "directional_pnl_mismatch_rows_tolerance_0_0021": 0,
+        "directional_pnl_max_abs_error": 0.0005000000000145999,
+        "semantically_malformed_rows": []
+      },
+      "secondary_pdf_claimed_total_trades": 299,
+      "secondary_pdf_snapshot_consistent_with_csv": false,
+      "analysis_readiness": "BLOCKED"
+    },
+    {
+      "filename": "tf4jam.csv",
+      "declared_timeframe_from_filename": "4h",
+      "nominal_timeframe_minutes": 240,
+      "file_size_bytes": 36564,
+      "sha256": "813f1d143a9f63415a67c627edeecd50e0cb1d421eeca9e28d91e5209a554ab5",
+      "row_count": 175,
+      "column_count": 21,
+      "raw_columns": [
+        "tradeNumber-cFqG8Z0J",
+        "long-cFqG8Z0J",
+        "cell-EOHtcR6g 3",
+        "cell-EOHtcR6g 4",
+        "rowContent-Wp3SuuZ_",
+        "rowContent-Wp3SuuZ_ 2",
+        "value-COAm5E_5",
+        "value-COAm5E_5 2",
+        "positionSize-JoU6mm3y",
+        "positionSize-JoU6mm3y 2",
+        "value-COAm5E_5 3",
+        "value-COAm5E_5 4",
+        "value-COAm5E_5 5",
+        "value-COAm5E_5 6",
+        "percentValue-COAm5E_5",
+        "value-COAm5E_5 7",
+        "percentValue-COAm5E_5 2",
+        "value-COAm5E_5 8",
+        "percentValue-COAm5E_5 3",
+        "ka-cell",
+        "short-cFqG8Z0J"
+      ],
+      "pandas_inferred_dtypes": {
+        "tradeNumber-cFqG8Z0J": "int64",
+        "long-cFqG8Z0J": "object",
+        "cell-EOHtcR6g 3": "object",
+        "cell-EOHtcR6g 4": "object",
+        "rowContent-Wp3SuuZ_": "object",
+        "rowContent-Wp3SuuZ_ 2": "object",
+        "value-COAm5E_5": "object",
+        "value-COAm5E_5 2": "object",
+        "positionSize-JoU6mm3y": "float64",
+        "positionSize-JoU6mm3y 2": "float64",
+        "value-COAm5E_5 3": "object",
+        "value-COAm5E_5 4": "object",
+        "value-COAm5E_5 5": "float64",
+        "value-COAm5E_5 6": "object",
+        "percentValue-COAm5E_5": "object",
+        "value-COAm5E_5 7": "object",
+        "percentValue-COAm5E_5 2": "object",
+        "value-COAm5E_5 8": "object",
+        "percentValue-COAm5E_5 3": "object",
+        "ka-cell": "int64",
+        "short-cFqG8Z0J": "object"
+      },
+      "trade_structure": "one combined row per trade; exit timestamp/price precede entry timestamp/price",
+      "entry_exit_representation": {
+        "timestamp_price_order": "exit_then_entry",
+        "signal_column_orientation": "A mostly Exit/status, B mostly MX; reversal labels remain ambiguous",
+        "event_label_a_counts": {
+          "Exit BUY": 91,
+          "Exit SELL": 78,
+          "MX BUY": 4,
+          "MX SELL": 2
+        },
+        "event_label_b_counts": {
+          "MX BUY": 93,
+          "MX SELL": 82
+        },
+        "direction_encoding": "exactly one sparse long/short marker is populated",
+        "open_positions": 0
+      },
+      "pnl_format": {
+        "net_pnl": "signed text; gains use +, losses use U+2212 minus, zero is plain 0",
+        "net_pnl_pct": "signed percentage text",
+        "position_value": "decimal text; 1m also uses U+202F narrow-space K suffix",
+        "examples": {
+          "net_pnl": [
+            "+0.91",
+            "+1.406",
+            "+0.793",
+            "+1.178",
+            "−0.923"
+          ],
+          "net_pnl_pct": [
+            "+0.18%",
+            "+0.31%",
+            "+0.17%",
+            "+0.20%",
+            "−0.17%"
+          ]
+        }
+      },
+      "timestamp_format": {
+        "observed": {
+          "MMM D, YYYY, HH:MM": 350
+        },
+        "timezone_present": false,
+        "custom_parser_failures": 0,
+        "pandas_default_parser_failures": 0
+      },
+      "missing_values": {
+        "by_raw_column": {
+          "long-cFqG8Z0J": 82,
+          "short-cFqG8Z0J": 93
+        },
+        "expected_sparse_direction_missing_cells": 175,
+        "unexpected_missing_cells": 0
+      },
+      "duplicates": {
+        "full_duplicate_rows_within_file": 0,
+        "duplicate_trade_id_occurrences": 112,
+        "unique_trade_ids": 63
+      },
+      "trade_id_coverage": {
+        "min": 1,
+        "max": 229,
+        "ranges": [
+          "229-197",
+          "30-1"
+        ],
+        "missing_ids_within_min_max": 166,
+        "sequence_complete": false
+      },
+      "segments": [
+        {
+          "segment_number": 1,
+          "csv_row_start": 2,
+          "csv_row_end": 62,
+          "row_count": 61,
+          "trade_id_first": 229,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "229-197",
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 5.0,
+          "inferred_timeframe": "5m",
+          "matches_filename_timeframe": false,
+          "entry_timestamp_min": "2026-07-27T10:45",
+          "exit_timestamp_max": "2026-08-21T11:05"
+        },
+        {
+          "segment_number": 2,
+          "csv_row_start": 63,
+          "csv_row_end": 92,
+          "row_count": 30,
+          "trade_id_first": 30,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "30-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 15.0,
+          "inferred_timeframe": "15m",
+          "matches_filename_timeframe": false,
+          "entry_timestamp_min": "2026-06-02T02:45",
+          "exit_timestamp_max": "2026-06-11T00:15"
+        },
+        {
+          "segment_number": 3,
+          "csv_row_start": 93,
+          "csv_row_end": 120,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 30.0,
+          "inferred_timeframe": "30m",
+          "matches_filename_timeframe": false,
+          "entry_timestamp_min": "2026-01-07T17:30",
+          "exit_timestamp_max": "2026-01-26T06:30"
+        },
+        {
+          "segment_number": 4,
+          "csv_row_start": 121,
+          "csv_row_end": 148,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 120.0,
+          "inferred_timeframe": "2h",
+          "matches_filename_timeframe": false,
+          "entry_timestamp_min": "2025-01-15T18:00",
+          "exit_timestamp_max": "2025-02-28T04:00"
+        },
+        {
+          "segment_number": 5,
+          "csv_row_start": 149,
+          "csv_row_end": 176,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 240.0,
+          "inferred_timeframe": "4h",
+          "matches_filename_timeframe": true,
+          "entry_timestamp_min": "2023-01-26T18:00",
+          "exit_timestamp_max": "2023-06-15T09:00"
+        }
+      ],
+      "target_segment_candidate": {
+        "selection_rule": "last descending-ID segment; requires external provenance confirmation",
+        "segment_number": 5,
+        "row_count": 28,
+        "closed_row_count": 28,
+        "inferred_timeframe": "4h"
+      },
+      "quality_checks": {
+        "side_invalid_rows": 0,
+        "numeric_parse_failures": {
+          "exit_price": 0,
+          "entry_price": 0,
+          "contracts": 0,
+          "position_value": 0,
+          "net_pnl": 0,
+          "net_pnl_pct": 0,
+          "max_runup": 0,
+          "max_runup_pct": 0,
+          "max_drawdown": 0,
+          "max_drawdown_pct": 0,
+          "cumulative_pnl": 0,
+          "cumulative_pnl_pct": 0,
+          "bars_in_trade": 0,
+          "probable_commission": 0
+        },
+        "nonpositive_price_rows": 0,
+        "nonpositive_contract_rows": 0,
+        "negative_bars_rows": 0,
+        "exit_before_entry_rows": 0,
+        "directional_pnl_mismatch_rows_tolerance_0_0021": 0,
+        "directional_pnl_max_abs_error": 0.0005000000000145999,
+        "semantically_malformed_rows": [
+          {
+            "source_row": 161,
+            "trade_id": 16,
+            "reason": "net_pnl_pct is not a percentage token; downstream cells are shifted",
+            "raw_values_from_net_pnl": [
+              "0",
+              "7.187",
+              "0",
+              "0.00%",
+              "0.00%",
+              "0.000",
+              "0.00%",
+              "0",
+              "17.97%",
+              "0",
+              null
+            ]
+          }
+        ]
+      },
+      "secondary_pdf_claimed_total_trades": 282,
+      "secondary_pdf_snapshot_consistent_with_csv": false,
+      "analysis_readiness": "BLOCKED"
+    },
+    {
+      "filename": "tf5menit.csv",
+      "declared_timeframe_from_filename": "5m",
+      "nominal_timeframe_minutes": 5,
+      "file_size_bytes": 12614,
+      "sha256": "c77cdfa91e8bd553dd0be8ed2968ed82693794f16c5acba1c7237f3601b80e68",
+      "row_count": 61,
+      "column_count": 20,
+      "raw_columns": [
+        "tradeNumber-cFqG8Z0J",
+        "long-cFqG8Z0J",
+        "cell-EOHtcR6g 3",
+        "cell-EOHtcR6g 4",
+        "rowContent-Wp3SuuZ_",
+        "rowContent-Wp3SuuZ_ 2",
+        "value-COAm5E_5",
+        "value-COAm5E_5 2",
+        "positionSize-JoU6mm3y",
+        "positionSize-JoU6mm3y 2",
+        "value-COAm5E_5 3",
+        "value-COAm5E_5 4",
+        "value-COAm5E_5 6",
+        "percentValue-COAm5E_5",
+        "value-COAm5E_5 7",
+        "percentValue-COAm5E_5 2",
+        "value-COAm5E_5 8",
+        "percentValue-COAm5E_5 3",
+        "ka-cell",
+        "short-cFqG8Z0J"
+      ],
+      "pandas_inferred_dtypes": {
+        "tradeNumber-cFqG8Z0J": "int64",
+        "long-cFqG8Z0J": "object",
+        "cell-EOHtcR6g 3": "object",
+        "cell-EOHtcR6g 4": "object",
+        "rowContent-Wp3SuuZ_": "object",
+        "rowContent-Wp3SuuZ_ 2": "object",
+        "value-COAm5E_5": "object",
+        "value-COAm5E_5 2": "object",
+        "positionSize-JoU6mm3y": "float64",
+        "positionSize-JoU6mm3y 2": "float64",
+        "value-COAm5E_5 3": "object",
+        "value-COAm5E_5 4": "object",
+        "value-COAm5E_5 6": "float64",
+        "percentValue-COAm5E_5": "object",
+        "value-COAm5E_5 7": "object",
+        "percentValue-COAm5E_5 2": "object",
+        "value-COAm5E_5 8": "object",
+        "percentValue-COAm5E_5 3": "object",
+        "ka-cell": "int64",
+        "short-cFqG8Z0J": "object"
+      },
+      "trade_structure": "one combined row per trade; exit timestamp/price precede entry timestamp/price",
+      "entry_exit_representation": {
+        "timestamp_price_order": "exit_then_entry",
+        "signal_column_orientation": "A mostly Exit/status, B mostly MX; reversal labels remain ambiguous",
+        "event_label_a_counts": {
+          "Exit BUY": 30,
+          "Exit SELL": 29,
+          "MX BUY": 2
+        },
+        "event_label_b_counts": {
+          "MX SELL": 31,
+          "MX BUY": 30
+        },
+        "direction_encoding": "exactly one sparse long/short marker is populated",
+        "open_positions": 0
+      },
+      "pnl_format": {
+        "net_pnl": "signed text; gains use +, losses use U+2212 minus, zero is plain 0",
+        "net_pnl_pct": "signed percentage text",
+        "position_value": "decimal text; 1m also uses U+202F narrow-space K suffix",
+        "examples": {
+          "net_pnl": [
+            "+0.91",
+            "+1.406",
+            "+0.793",
+            "+1.178",
+            "−0.923"
+          ],
+          "net_pnl_pct": [
+            "+0.18%",
+            "+0.31%",
+            "+0.17%",
+            "+0.20%",
+            "−0.17%"
+          ]
+        }
+      },
+      "timestamp_format": {
+        "observed": {
+          "MMM D, YYYY, HH:MM": 122
+        },
+        "timezone_present": false,
+        "custom_parser_failures": 0,
+        "pandas_default_parser_failures": 0
+      },
+      "missing_values": {
+        "by_raw_column": {
+          "long-cFqG8Z0J": 31,
+          "short-cFqG8Z0J": 30
+        },
+        "expected_sparse_direction_missing_cells": 61,
+        "unexpected_missing_cells": 0
+      },
+      "duplicates": {
+        "full_duplicate_rows_within_file": 0,
+        "duplicate_trade_id_occurrences": 0,
+        "unique_trade_ids": 61
+      },
+      "trade_id_coverage": {
+        "min": 1,
+        "max": 229,
+        "ranges": [
+          "229-197",
+          "28-1"
+        ],
+        "missing_ids_within_min_max": 168,
+        "sequence_complete": false
+      },
+      "segments": [
+        {
+          "segment_number": 1,
+          "csv_row_start": 2,
+          "csv_row_end": 62,
+          "row_count": 61,
+          "trade_id_first": 229,
+          "trade_id_last": 1,
+          "trade_id_ranges": [
+            "229-197",
+            "28-1"
+          ],
+          "modal_elapsed_minutes_per_bar": 5.0,
+          "inferred_timeframe": "5m",
+          "matches_filename_timeframe": true,
+          "entry_timestamp_min": "2026-07-27T10:45",
+          "exit_timestamp_max": "2026-08-21T11:05"
+        }
+      ],
+      "target_segment_candidate": {
+        "selection_rule": "last descending-ID segment; requires external provenance confirmation",
+        "segment_number": 1,
+        "row_count": 61,
+        "closed_row_count": 61,
+        "inferred_timeframe": "5m"
+      },
+      "quality_checks": {
+        "side_invalid_rows": 0,
+        "numeric_parse_failures": {
+          "exit_price": 0,
+          "entry_price": 0,
+          "contracts": 0,
+          "position_value": 0,
+          "net_pnl": 0,
+          "net_pnl_pct": 0,
+          "max_runup": 0,
+          "max_runup_pct": 0,
+          "max_drawdown": 0,
+          "max_drawdown_pct": 0,
+          "cumulative_pnl": 0,
+          "cumulative_pnl_pct": 0,
+          "bars_in_trade": 0
+        },
+        "nonpositive_price_rows": 0,
+        "nonpositive_contract_rows": 0,
+        "negative_bars_rows": 0,
+        "exit_before_entry_rows": 0,
+        "directional_pnl_mismatch_rows_tolerance_0_0021": 0,
+        "directional_pnl_max_abs_error": 0.0005000000000145999,
+        "semantically_malformed_rows": []
+      },
+      "secondary_pdf_claimed_total_trades": 221,
+      "secondary_pdf_snapshot_consistent_with_csv": false,
+      "analysis_readiness": "BLOCKED"
+    }
+  ],
+  "cross_file_shared_semantic_rows": [
+    {
+      "file_a": "tf15menit.csv",
+      "file_b": "tf1hari.csv",
+      "shared_semantic_rows": 91
+    },
+    {
+      "file_a": "tf15menit.csv",
+      "file_b": "tf2jam.csv",
+      "shared_semantic_rows": 91
+    },
+    {
+      "file_a": "tf15menit.csv",
+      "file_b": "tf30menit.csv",
+      "shared_semantic_rows": 91
+    },
+    {
+      "file_a": "tf15menit.csv",
+      "file_b": "tf4jam.csv",
+      "shared_semantic_rows": 91
+    },
+    {
+      "file_a": "tf15menit.csv",
+      "file_b": "tf5menit.csv",
+      "shared_semantic_rows": 61
+    },
+    {
+      "file_a": "tf1hari.csv",
+      "file_b": "tf2jam.csv",
+      "shared_semantic_rows": 147
+    },
+    {
+      "file_a": "tf1hari.csv",
+      "file_b": "tf30menit.csv",
+      "shared_semantic_rows": 119
+    },
+    {
+      "file_a": "tf1hari.csv",
+      "file_b": "tf4jam.csv",
+      "shared_semantic_rows": 175
+    },
+    {
+      "file_a": "tf1hari.csv",
+      "file_b": "tf5menit.csv",
+      "shared_semantic_rows": 61
+    },
+    {
+      "file_a": "tf2jam.csv",
+      "file_b": "tf30menit.csv",
+      "shared_semantic_rows": 119
+    },
+    {
+      "file_a": "tf2jam.csv",
+      "file_b": "tf4jam.csv",
+      "shared_semantic_rows": 147
+    },
+    {
+      "file_a": "tf2jam.csv",
+      "file_b": "tf5menit.csv",
+      "shared_semantic_rows": 61
+    },
+    {
+      "file_a": "tf30menit.csv",
+      "file_b": "tf4jam.csv",
+      "shared_semantic_rows": 119
+    },
+    {
+      "file_a": "tf30menit.csv",
+      "file_b": "tf5menit.csv",
+      "shared_semantic_rows": 61
+    },
+    {
+      "file_a": "tf4jam.csv",
+      "file_b": "tf5menit.csv",
+      "shared_semantic_rows": 61
+    }
+  ],
+  "pdf_sources": [
+    {
+      "filename": "laporanbacktest.pdf",
+      "sha256": "06b29b1c70c29c966f05fdb9b848e99d8ca029719157af3de8acf18685dbda14",
+      "pages": 13,
+      "text_characters": 20302,
+      "metadata": {
+        "format": "PDF 1.6",
+        "title": "",
+        "author": "python-docx",
+        "subject": "",
+        "keywords": "",
+        "creator": "Writer",
+        "producer": "LibreOffice 7.4",
+        "creationDate": "D:20260822100113Z'",
+        "modDate": "",
+        "trapped": "",
+        "encryption": null
+      },
+      "claimed_total_trades_by_timeframe": {
+        "1m": 262,
+        "5m": 221,
+        "15m": 222,
+        "30m": 299,
+        "1h": 429,
+        "2h": 227,
+        "4h": 282,
+        "1D": 496
+      },
+      "contains_parameter_change_recommendations": true,
+      "audit_use": "secondary_context_only_not_primary_trade_evidence",
+      "visual_review": "representative title, comparison, and recommendation pages are legible"
+    },
+    {
+      "filename": "laporanindikator.pdf",
+      "sha256": "f109ff7521dcee2de9c3cf419f5ac54a0ee2b7598e5743ecd373c552b3d038d1",
+      "pages": 11,
+      "text_characters": 18044,
+      "metadata": {
+        "format": "PDF 1.6",
+        "title": "",
+        "author": "python-docx",
+        "subject": "",
+        "keywords": "",
+        "creator": "Writer",
+        "producer": "LibreOffice 7.4",
+        "creationDate": "D:20260821022839Z'",
+        "modDate": "",
+        "trapped": "",
+        "encryption": null
+      },
+      "claimed_total_trades_by_timeframe": {
+        "1m": 262,
+        "5m": 221,
+        "15m": 222,
+        "30m": 299,
+        "1h": 429,
+        "2h": 227,
+        "4h": 282,
+        "1D": 496
+      },
+      "contains_parameter_change_recommendations": true,
+      "audit_use": "secondary_context_only_not_primary_trade_evidence",
+      "visual_review": "representative title, comparison, and recommendation pages are legible"
+    }
+  ],
+  "findings": [
+    {
+      "id": "DATA-001",
+      "severity": "critical",
+      "finding": "Five CSVs are cumulative append containers, not isolated timeframe files."
+    },
+    {
+      "id": "DATA-002",
+      "severity": "critical",
+      "finding": "Trade logs are incomplete or snapshot-fragmented; ID ranges contain large gaps."
+    },
+    {
+      "id": "DATA-003",
+      "severity": "critical",
+      "finding": "PDFs claim 2438 trades, while only 325 target-candidate rows exist and snapshots do not reconcile."
+    },
+    {
+      "id": "DATA-004",
+      "severity": "high",
+      "finding": "Schema is positional, minified, and inconsistent at 20 versus 21 columns."
+    },
+    {
+      "id": "DATA-005",
+      "severity": "high",
+      "finding": "4h trade 16 and 1D trade 17 are semantically shifted zero-PnL rows."
+    },
+    {
+      "id": "DATA-006",
+      "severity": "high",
+      "finding": "Timezone, exchange/feed, date range, and complete Strategy Properties are absent."
+    },
+    {
+      "id": "DATA-007",
+      "severity": "medium",
+      "finding": "One 1h row is Open and unrealized."
+    },
+    {
+      "id": "DATA-008",
+      "severity": "medium",
+      "finding": "Raw nulls are expected sparse direction markers; unexpected NaN count is zero."
+    },
+    {
+      "id": "DATA-009",
+      "severity": "medium",
+      "finding": "Default pandas parsing fails on 56 mixed-format 1D-container timestamp cells; explicit parsing succeeds."
+    },
+    {
+      "id": "DOC-001",
+      "severity": "high",
+      "finding": "Both PDFs include parameter-change/live-allocation recommendations incompatible with the immutable-strategy audit scope."
+    }
+  ],
+  "recommended_preprocessing_strategy": [
+    {
+      "order": 1,
+      "action": "Freeze Pine hash, symbol/feed, timezone, date range, and every Strategy Property; regenerate equivalence evidence."
+    },
+    {
+      "order": 2,
+      "action": "Resolve 40 USD metadata versus Pine initial_capital=10000 before calculating returns."
+    },
+    {
+      "order": 3,
+      "action": "Re-export one complete isolated List of Trades file per timeframe with stable semantic headers."
+    },
+    {
+      "order": 4,
+      "action": "If re-export is impossible, split at trade-ID resets and verify timeframe via elapsed_minutes/bars; use the last matching segment only provisionally."
+    },
+    {
+      "order": 5,
+      "action": "Map a canonical derived schema and quarantine the two shifted zero-PnL rows; preserve raw text and source row."
+    },
+    {
+      "order": 6,
+      "action": "Normalize U+2212 minus, commas, percentages, and U+202F K suffix without writing raw files."
+    },
+    {
+      "order": 7,
+      "action": "Parse both timestamp formats explicitly and attach the documented timezone; never infer timezone."
+    },
+    {
+      "order": 8,
+      "action": "Use snapshot_id+timeframe+trade_id+entry+exit+side as a composite key; trade_id alone is not unique."
+    },
+    {
+      "order": 9,
+      "action": "Separate Open rows from realized trades."
+    },
+    {
+      "order": 10,
+      "action": "Reconcile directional PnL, PnL percentage, cumulative PnL, ID coverage, and PDF/CSV snapshot identity."
+    },
+    {
+      "order": 11,
+      "action": "Add HTF bias, minimum entry score, preset, costs, feed, date range, and Pine hash to future experiment metadata."
+    }
+  ],
+  "analysis_acceptance_gates": [
+    "Current Pine hash matches equivalence evidence.",
+    "Initial capital and all Strategy Properties are reconciled.",
+    "Every timeframe has a complete isolated log or documented sampling design.",
+    "No semantically shifted rows remain unresolved.",
+    "Timezone, exchange/feed, and date range are frozen.",
+    "PDF totals reconcile to the same snapshot or are excluded as evidence."
+  ],
+  "source_hashes_before_output_write": {
+    "AGENTS.md": "0686a6fcb36b4841ce425b8ff701f073fdfd646293838970bcf7d6b3eebb124d",
+    "data/metadata/dataset_info.yaml": "5c673e2465b757650e0c60999dda89e459063dced25275f37d6d92644e55b573",
+    "strategy/MAESTRO-X_v1.0.pine": "a4e94a39fdf2806db07b0142ad8a014ad1f60ea76efcead4c648e6ae744e0bc6",
+    "results/validation/equivalence.json": "01d5db15a0812a58547f238dfdb0876ebf18b763def21a16403c697a32544b9f",
+    "docs/laporanbacktest.pdf": "06b29b1c70c29c966f05fdb9b848e99d8ca029719157af3de8acf18685dbda14",
+    "docs/laporanindikator.pdf": "f109ff7521dcee2de9c3cf419f5ac54a0ee2b7598e5743ecd373c552b3d038d1",
+    "data/raw/trades/tf15menit.csv": "16667494626d0e37fd2f0fc38dba67bd153d8100da83871ac9c3bc8fd36bd479",
+    "data/raw/trades/tf1hari.csv": "cd586bb6be299ed9490eafc816f970e8ecced562494858264e5934ee9c43390d",
+    "data/raw/trades/tf1jam.csv": "54b744781136c5182a7cc0172abab263421198ed6da7806bfed89b426c4eade2",
+    "data/raw/trades/tf1menit.csv": "2ea89b322c420a6fbb936c4a0ba7e8d05c900e7833b0daef1609cc31234bc50a",
+    "data/raw/trades/tf2jam.csv": "0d8b770a962ec816734400ea3ea5feef0b15812f3050a34418df3768471ff999",
+    "data/raw/trades/tf30menit.csv": "87d2ec3e5dc3a131d686bf64fbb49c03056726bfbac715f4867d0c4500d2d7aa",
+    "data/raw/trades/tf4jam.csv": "813f1d143a9f63415a67c627edeecd50e0cb1d421eeca9e28d91e5209a554ab5",
+    "data/raw/trades/tf5menit.csv": "c77cdfa91e8bd553dd0be8ed2968ed82693794f16c5acba1c7237f3601b80e68"
+  }
+}

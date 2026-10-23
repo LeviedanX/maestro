@@ -1,0 +1,736 @@
+{
+  "schema_version": "1.0",
+  "pipeline_version": "1.0.0",
+  "phase": "PHASE_2_PREPROCESSING_ONLY",
+  "status": "completed_with_quarantined_rows",
+  "analysis_executed": false,
+  "raw_data_modified": false,
+  "analysis_readiness": "blocked_pending_complete_isolated_exports_and_provenance_reconciliation",
+  "libraries": {
+    "python": "3.13.5",
+    "pandas": "2.3.1",
+    "numpy": "2.3.1",
+    "logging": "python_standard_library"
+  },
+  "pipeline_stages": [
+    "csv_loader",
+    "schema_validator",
+    "trade_id_segmentation",
+    "timeframe_detector",
+    "datatype_converter",
+    "timestamp_parser",
+    "trade_normalization",
+    "semantic_validation",
+    "quarantine",
+    "atomic_output_write",
+    "source_hash_verification"
+  ],
+  "input": {
+    "directory": "data/raw/trades",
+    "csv_files": 8,
+    "sha256_before": {
+      "tf15menit.csv": "16667494626d0e37fd2f0fc38dba67bd153d8100da83871ac9c3bc8fd36bd479",
+      "tf1hari.csv": "cd586bb6be299ed9490eafc816f970e8ecced562494858264e5934ee9c43390d",
+      "tf1jam.csv": "54b744781136c5182a7cc0172abab263421198ed6da7806bfed89b426c4eade2",
+      "tf1menit.csv": "2ea89b322c420a6fbb936c4a0ba7e8d05c900e7833b0daef1609cc31234bc50a",
+      "tf2jam.csv": "0d8b770a962ec816734400ea3ea5feef0b15812f3050a34418df3768471ff999",
+      "tf30menit.csv": "87d2ec3e5dc3a131d686bf64fbb49c03056726bfbac715f4867d0c4500d2d7aa",
+      "tf4jam.csv": "813f1d143a9f63415a67c627edeecd50e0cb1d421eeca9e28d91e5209a554ab5",
+      "tf5menit.csv": "c77cdfa91e8bd553dd0be8ed2968ed82693794f16c5acba1c7237f3601b80e68"
+    },
+    "sha256_after": {
+      "tf15menit.csv": "16667494626d0e37fd2f0fc38dba67bd153d8100da83871ac9c3bc8fd36bd479",
+      "tf1hari.csv": "cd586bb6be299ed9490eafc816f970e8ecced562494858264e5934ee9c43390d",
+      "tf1jam.csv": "54b744781136c5182a7cc0172abab263421198ed6da7806bfed89b426c4eade2",
+      "tf1menit.csv": "2ea89b322c420a6fbb936c4a0ba7e8d05c900e7833b0daef1609cc31234bc50a",
+      "tf2jam.csv": "0d8b770a962ec816734400ea3ea5feef0b15812f3050a34418df3768471ff999",
+      "tf30menit.csv": "87d2ec3e5dc3a131d686bf64fbb49c03056726bfbac715f4867d0c4500d2d7aa",
+      "tf4jam.csv": "813f1d143a9f63415a67c627edeecd50e0cb1d421eeca9e28d91e5209a554ab5",
+      "tf5menit.csv": "c77cdfa91e8bd553dd0be8ed2968ed82693794f16c5acba1c7237f3601b80e68"
+    },
+    "all_hashes_unchanged": true
+  },
+  "aggregate": {
+    "raw_rows": 918,
+    "target_candidate_rows": 325,
+    "accepted_rows": 323,
+    "rejected_rows": 2,
+    "closed_rows": 322,
+    "open_rows": 1,
+    "record_ids_unique": true,
+    "timeframe_consistent_rows": 323
+  },
+  "canonical_schema": {
+    "columns": [
+      "record_id",
+      "timeframe",
+      "timeframe_minutes",
+      "trade_id",
+      "side",
+      "entry_timestamp",
+      "exit_timestamp",
+      "entry_timestamp_precision",
+      "exit_timestamp_precision",
+      "entry_signal",
+      "exit_signal",
+      "entry_price",
+      "exit_price",
+      "contracts",
+      "position_value_usd",
+      "net_pnl_usd",
+      "net_pnl_pct",
+      "commission_usd",
+      "max_runup_usd",
+      "max_runup_pct",
+      "max_drawdown_usd",
+      "max_drawdown_pct",
+      "raw_cumulative_pnl_usd",
+      "raw_cumulative_pnl_pct",
+      "bars_in_trade",
+      "elapsed_minutes",
+      "is_closed",
+      "trade_status",
+      "timeframe_consistent",
+      "source_file",
+      "source_sha256",
+      "source_row",
+      "source_segment",
+      "detected_timeframe",
+      "data_scope"
+    ],
+    "timestamp_representation": "ISO-8601 minute precision; timezone intentionally unspecified",
+    "numeric_representation": "base numeric units; percentages stored as percentage points",
+    "commission_policy": "NaN when absent from 20-column exports; parsed from positional column 12 for 21-column exports",
+    "row_order": "chronological within timeframe; configured timeframe order in combined output",
+    "record_id": "SHA-256(source_sha256|timeframe|trade_id|entry|exit|side)"
+  },
+  "datasets": [
+    {
+      "source_file": "tf1menit.csv",
+      "source_sha256": "2ea89b322c420a6fbb936c4a0ba7e8d05c900e7833b0daef1609cc31234bc50a",
+      "source_size_bytes": 12574,
+      "expected_timeframe": "1m",
+      "raw_shape": {
+        "rows": 61,
+        "columns": 20
+      },
+      "schema_variant": "positional_20_columns",
+      "commission_column_present": false,
+      "segments": [
+        {
+          "segment_number": 1,
+          "csv_row_start": 2,
+          "csv_row_end": 62,
+          "row_count": 61,
+          "trade_id_first": 273,
+          "trade_id_last": 1,
+          "detected_timeframe": "1m",
+          "modal_elapsed_minutes_per_bar": 1.0,
+          "evidence_rows": 59,
+          "modal_rows": 59,
+          "confidence": 1.0,
+          "relative_error": 0.0,
+          "selected_as_target": true
+        }
+      ],
+      "selected_segment_number": 1,
+      "signal_orientation": "column_a_exit",
+      "target_candidate_rows": 61,
+      "accepted_rows": 61,
+      "rejected_rows": 0,
+      "closed_rows": 61,
+      "open_rows": 0,
+      "missing_trade_ids_within_target_range": 212,
+      "processed_file": "data/processed/trades_1m.csv"
+    },
+    {
+      "source_file": "tf5menit.csv",
+      "source_sha256": "c77cdfa91e8bd553dd0be8ed2968ed82693794f16c5acba1c7237f3601b80e68",
+      "source_size_bytes": 12614,
+      "expected_timeframe": "5m",
+      "raw_shape": {
+        "rows": 61,
+        "columns": 20
+      },
+      "schema_variant": "positional_20_columns",
+      "commission_column_present": false,
+      "segments": [
+        {
+          "segment_number": 1,
+          "csv_row_start": 2,
+          "csv_row_end": 62,
+          "row_count": 61,
+          "trade_id_first": 229,
+          "trade_id_last": 1,
+          "detected_timeframe": "5m",
+          "modal_elapsed_minutes_per_bar": 5.0,
+          "evidence_rows": 57,
+          "modal_rows": 57,
+          "confidence": 1.0,
+          "relative_error": 0.0,
+          "selected_as_target": true
+        }
+      ],
+      "selected_segment_number": 1,
+      "signal_orientation": "column_a_exit",
+      "target_candidate_rows": 61,
+      "accepted_rows": 61,
+      "rejected_rows": 0,
+      "closed_rows": 61,
+      "open_rows": 0,
+      "missing_trade_ids_within_target_range": 168,
+      "processed_file": "data/processed/trades_5m.csv"
+    },
+    {
+      "source_file": "tf15menit.csv",
+      "source_sha256": "16667494626d0e37fd2f0fc38dba67bd153d8100da83871ac9c3bc8fd36bd479",
+      "source_size_bytes": 18564,
+      "expected_timeframe": "15m",
+      "raw_shape": {
+        "rows": 91,
+        "columns": 20
+      },
+      "schema_variant": "positional_20_columns",
+      "commission_column_present": false,
+      "segments": [
+        {
+          "segment_number": 1,
+          "csv_row_start": 2,
+          "csv_row_end": 62,
+          "row_count": 61,
+          "trade_id_first": 229,
+          "trade_id_last": 1,
+          "detected_timeframe": "5m",
+          "modal_elapsed_minutes_per_bar": 5.0,
+          "evidence_rows": 57,
+          "modal_rows": 57,
+          "confidence": 1.0,
+          "relative_error": 0.0,
+          "selected_as_target": false
+        },
+        {
+          "segment_number": 2,
+          "csv_row_start": 63,
+          "csv_row_end": 92,
+          "row_count": 30,
+          "trade_id_first": 30,
+          "trade_id_last": 1,
+          "detected_timeframe": "15m",
+          "modal_elapsed_minutes_per_bar": 15.0,
+          "evidence_rows": 27,
+          "modal_rows": 24,
+          "confidence": 0.8888888889,
+          "relative_error": 0.0,
+          "selected_as_target": true
+        }
+      ],
+      "selected_segment_number": 2,
+      "signal_orientation": "column_a_exit",
+      "target_candidate_rows": 30,
+      "accepted_rows": 30,
+      "rejected_rows": 0,
+      "closed_rows": 30,
+      "open_rows": 0,
+      "missing_trade_ids_within_target_range": 0,
+      "processed_file": "data/processed/trades_15m.csv"
+    },
+    {
+      "source_file": "tf30menit.csv",
+      "source_sha256": "87d2ec3e5dc3a131d686bf64fbb49c03056726bfbac715f4867d0c4500d2d7aa",
+      "source_size_bytes": 24131,
+      "expected_timeframe": "30m",
+      "raw_shape": {
+        "rows": 119,
+        "columns": 20
+      },
+      "schema_variant": "positional_20_columns",
+      "commission_column_present": false,
+      "segments": [
+        {
+          "segment_number": 1,
+          "csv_row_start": 2,
+          "csv_row_end": 62,
+          "row_count": 61,
+          "trade_id_first": 229,
+          "trade_id_last": 1,
+          "detected_timeframe": "5m",
+          "modal_elapsed_minutes_per_bar": 5.0,
+          "evidence_rows": 57,
+          "modal_rows": 57,
+          "confidence": 1.0,
+          "relative_error": 0.0,
+          "selected_as_target": false
+        },
+        {
+          "segment_number": 2,
+          "csv_row_start": 63,
+          "csv_row_end": 92,
+          "row_count": 30,
+          "trade_id_first": 30,
+          "trade_id_last": 1,
+          "detected_timeframe": "15m",
+          "modal_elapsed_minutes_per_bar": 15.0,
+          "evidence_rows": 27,
+          "modal_rows": 24,
+          "confidence": 0.8888888889,
+          "relative_error": 0.0,
+          "selected_as_target": false
+        },
+        {
+          "segment_number": 3,
+          "csv_row_start": 93,
+          "csv_row_end": 120,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "detected_timeframe": "30m",
+          "modal_elapsed_minutes_per_bar": 30.0,
+          "evidence_rows": 22,
+          "modal_rows": 17,
+          "confidence": 0.7727272727,
+          "relative_error": 0.0,
+          "selected_as_target": true
+        }
+      ],
+      "selected_segment_number": 3,
+      "signal_orientation": "column_a_exit",
+      "target_candidate_rows": 28,
+      "accepted_rows": 28,
+      "rejected_rows": 0,
+      "closed_rows": 28,
+      "open_rows": 0,
+      "missing_trade_ids_within_target_range": 0,
+      "processed_file": "data/processed/trades_30m.csv"
+    },
+    {
+      "source_file": "tf1jam.csv",
+      "source_sha256": "54b744781136c5182a7cc0172abab263421198ed6da7806bfed89b426c4eade2",
+      "source_size_bytes": 12517,
+      "expected_timeframe": "1h",
+      "raw_shape": {
+        "rows": 61,
+        "columns": 20
+      },
+      "schema_variant": "positional_20_columns",
+      "commission_column_present": false,
+      "segments": [
+        {
+          "segment_number": 1,
+          "csv_row_start": 2,
+          "csv_row_end": 62,
+          "row_count": 61,
+          "trade_id_first": 432,
+          "trade_id_last": 1,
+          "detected_timeframe": "1h",
+          "modal_elapsed_minutes_per_bar": 60.0,
+          "evidence_rows": 58,
+          "modal_rows": 29,
+          "confidence": 0.5,
+          "relative_error": 0.0,
+          "selected_as_target": true
+        }
+      ],
+      "selected_segment_number": 1,
+      "signal_orientation": "column_b_exit",
+      "target_candidate_rows": 61,
+      "accepted_rows": 61,
+      "rejected_rows": 0,
+      "closed_rows": 60,
+      "open_rows": 1,
+      "missing_trade_ids_within_target_range": 371,
+      "processed_file": "data/processed/trades_1h.csv"
+    },
+    {
+      "source_file": "tf2jam.csv",
+      "source_sha256": "0d8b770a962ec816734400ea3ea5feef0b15812f3050a34418df3768471ff999",
+      "source_size_bytes": 29653,
+      "expected_timeframe": "2h",
+      "raw_shape": {
+        "rows": 147,
+        "columns": 20
+      },
+      "schema_variant": "positional_20_columns",
+      "commission_column_present": false,
+      "segments": [
+        {
+          "segment_number": 1,
+          "csv_row_start": 2,
+          "csv_row_end": 62,
+          "row_count": 61,
+          "trade_id_first": 229,
+          "trade_id_last": 1,
+          "detected_timeframe": "5m",
+          "modal_elapsed_minutes_per_bar": 5.0,
+          "evidence_rows": 57,
+          "modal_rows": 57,
+          "confidence": 1.0,
+          "relative_error": 0.0,
+          "selected_as_target": false
+        },
+        {
+          "segment_number": 2,
+          "csv_row_start": 63,
+          "csv_row_end": 92,
+          "row_count": 30,
+          "trade_id_first": 30,
+          "trade_id_last": 1,
+          "detected_timeframe": "15m",
+          "modal_elapsed_minutes_per_bar": 15.0,
+          "evidence_rows": 27,
+          "modal_rows": 24,
+          "confidence": 0.8888888889,
+          "relative_error": 0.0,
+          "selected_as_target": false
+        },
+        {
+          "segment_number": 3,
+          "csv_row_start": 93,
+          "csv_row_end": 120,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "detected_timeframe": "30m",
+          "modal_elapsed_minutes_per_bar": 30.0,
+          "evidence_rows": 22,
+          "modal_rows": 17,
+          "confidence": 0.7727272727,
+          "relative_error": 0.0,
+          "selected_as_target": false
+        },
+        {
+          "segment_number": 4,
+          "csv_row_start": 121,
+          "csv_row_end": 148,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "detected_timeframe": "2h",
+          "modal_elapsed_minutes_per_bar": 120.0,
+          "evidence_rows": 26,
+          "modal_rows": 25,
+          "confidence": 0.9615384615,
+          "relative_error": 0.0,
+          "selected_as_target": true
+        }
+      ],
+      "selected_segment_number": 4,
+      "signal_orientation": "column_a_exit",
+      "target_candidate_rows": 28,
+      "accepted_rows": 28,
+      "rejected_rows": 0,
+      "closed_rows": 28,
+      "open_rows": 0,
+      "missing_trade_ids_within_target_range": 0,
+      "processed_file": "data/processed/trades_2h.csv"
+    },
+    {
+      "source_file": "tf4jam.csv",
+      "source_sha256": "813f1d143a9f63415a67c627edeecd50e0cb1d421eeca9e28d91e5209a554ab5",
+      "source_size_bytes": 36564,
+      "expected_timeframe": "4h",
+      "raw_shape": {
+        "rows": 175,
+        "columns": 21
+      },
+      "schema_variant": "positional_21_columns",
+      "commission_column_present": true,
+      "segments": [
+        {
+          "segment_number": 1,
+          "csv_row_start": 2,
+          "csv_row_end": 62,
+          "row_count": 61,
+          "trade_id_first": 229,
+          "trade_id_last": 1,
+          "detected_timeframe": "5m",
+          "modal_elapsed_minutes_per_bar": 5.0,
+          "evidence_rows": 57,
+          "modal_rows": 57,
+          "confidence": 1.0,
+          "relative_error": 0.0,
+          "selected_as_target": false
+        },
+        {
+          "segment_number": 2,
+          "csv_row_start": 63,
+          "csv_row_end": 92,
+          "row_count": 30,
+          "trade_id_first": 30,
+          "trade_id_last": 1,
+          "detected_timeframe": "15m",
+          "modal_elapsed_minutes_per_bar": 15.0,
+          "evidence_rows": 27,
+          "modal_rows": 24,
+          "confidence": 0.8888888889,
+          "relative_error": 0.0,
+          "selected_as_target": false
+        },
+        {
+          "segment_number": 3,
+          "csv_row_start": 93,
+          "csv_row_end": 120,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "detected_timeframe": "30m",
+          "modal_elapsed_minutes_per_bar": 30.0,
+          "evidence_rows": 22,
+          "modal_rows": 17,
+          "confidence": 0.7727272727,
+          "relative_error": 0.0,
+          "selected_as_target": false
+        },
+        {
+          "segment_number": 4,
+          "csv_row_start": 121,
+          "csv_row_end": 148,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "detected_timeframe": "2h",
+          "modal_elapsed_minutes_per_bar": 120.0,
+          "evidence_rows": 26,
+          "modal_rows": 25,
+          "confidence": 0.9615384615,
+          "relative_error": 0.0,
+          "selected_as_target": false
+        },
+        {
+          "segment_number": 5,
+          "csv_row_start": 149,
+          "csv_row_end": 176,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "detected_timeframe": "4h",
+          "modal_elapsed_minutes_per_bar": 240.0,
+          "evidence_rows": 25,
+          "modal_rows": 16,
+          "confidence": 0.64,
+          "relative_error": 0.0,
+          "selected_as_target": true
+        }
+      ],
+      "selected_segment_number": 5,
+      "signal_orientation": "column_a_exit",
+      "target_candidate_rows": 28,
+      "accepted_rows": 27,
+      "rejected_rows": 1,
+      "closed_rows": 27,
+      "open_rows": 0,
+      "missing_trade_ids_within_target_range": 0,
+      "processed_file": "data/processed/trades_4h.csv"
+    },
+    {
+      "source_file": "tf1hari.csv",
+      "source_sha256": "cd586bb6be299ed9490eafc816f970e8ecced562494858264e5934ee9c43390d",
+      "source_size_bytes": 41796,
+      "expected_timeframe": "1D",
+      "raw_shape": {
+        "rows": 203,
+        "columns": 21
+      },
+      "schema_variant": "positional_21_columns",
+      "commission_column_present": true,
+      "segments": [
+        {
+          "segment_number": 1,
+          "csv_row_start": 2,
+          "csv_row_end": 62,
+          "row_count": 61,
+          "trade_id_first": 229,
+          "trade_id_last": 1,
+          "detected_timeframe": "5m",
+          "modal_elapsed_minutes_per_bar": 5.0,
+          "evidence_rows": 57,
+          "modal_rows": 57,
+          "confidence": 1.0,
+          "relative_error": 0.0,
+          "selected_as_target": false
+        },
+        {
+          "segment_number": 2,
+          "csv_row_start": 63,
+          "csv_row_end": 92,
+          "row_count": 30,
+          "trade_id_first": 30,
+          "trade_id_last": 1,
+          "detected_timeframe": "15m",
+          "modal_elapsed_minutes_per_bar": 15.0,
+          "evidence_rows": 27,
+          "modal_rows": 24,
+          "confidence": 0.8888888889,
+          "relative_error": 0.0,
+          "selected_as_target": false
+        },
+        {
+          "segment_number": 3,
+          "csv_row_start": 93,
+          "csv_row_end": 120,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "detected_timeframe": "30m",
+          "modal_elapsed_minutes_per_bar": 30.0,
+          "evidence_rows": 22,
+          "modal_rows": 17,
+          "confidence": 0.7727272727,
+          "relative_error": 0.0,
+          "selected_as_target": false
+        },
+        {
+          "segment_number": 4,
+          "csv_row_start": 121,
+          "csv_row_end": 148,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "detected_timeframe": "2h",
+          "modal_elapsed_minutes_per_bar": 120.0,
+          "evidence_rows": 26,
+          "modal_rows": 25,
+          "confidence": 0.9615384615,
+          "relative_error": 0.0,
+          "selected_as_target": false
+        },
+        {
+          "segment_number": 5,
+          "csv_row_start": 149,
+          "csv_row_end": 176,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "detected_timeframe": "4h",
+          "modal_elapsed_minutes_per_bar": 240.0,
+          "evidence_rows": 25,
+          "modal_rows": 16,
+          "confidence": 0.64,
+          "relative_error": 0.0,
+          "selected_as_target": false
+        },
+        {
+          "segment_number": 6,
+          "csv_row_start": 177,
+          "csv_row_end": 204,
+          "row_count": 28,
+          "trade_id_first": 28,
+          "trade_id_last": 1,
+          "detected_timeframe": "1D",
+          "modal_elapsed_minutes_per_bar": 2160.0,
+          "evidence_rows": 27,
+          "modal_rows": 5,
+          "confidence": 0.1851851852,
+          "relative_error": 0.5,
+          "selected_as_target": true
+        }
+      ],
+      "selected_segment_number": 6,
+      "signal_orientation": "column_a_exit",
+      "target_candidate_rows": 28,
+      "accepted_rows": 27,
+      "rejected_rows": 1,
+      "closed_rows": 27,
+      "open_rows": 0,
+      "missing_trade_ids_within_target_range": 0,
+      "processed_file": "data/processed/trades_1d.csv"
+    }
+  ],
+  "quarantine": {
+    "path": "data/processed/rejected_trades.csv",
+    "rows": 2,
+    "reason_counts": {
+      "INVALID_PERCENT_FORMAT": 2
+    },
+    "policy": "No imputation or silent repair; preserve source row and raw row JSON."
+  },
+  "assumptions": [
+    "Trade-ID resets delimit cumulative append segments.",
+    "The last segment whose duration-per-bar evidence matches the configured filename timeframe is the provisional target segment.",
+    "Date-only segments with calendar-time-per-bar of at least 1440 minutes are classified as 1D; weekend and market-closure gaps can raise the modal calendar ratio above 1440.",
+    "Timestamps are timezone-naive because the exports provide no timezone.",
+    "A 21st positional field is treated as commission; 20-column exports retain commission as unknown rather than forcing zero.",
+    "Signal orientation is inferred from Exit/Open markers, with row-level override when one signal is explicitly an exit marker."
+  ],
+  "limitations": [
+    "Trade-ID ranges remain incomplete and five raw files contain cumulative append blocks.",
+    "The 40 USD metadata versus Pine initial_capital=10000 provenance conflict is not resolved by preprocessing.",
+    "No exchange/feed, chart timezone, exact date range, or complete Strategy Properties are available.",
+    "Processed rows represent observed target segments only and must not be presented as complete TradingView backtests.",
+    "No performance, robustness, sensitivity, or statistical analysis was executed."
+  ],
+  "outputs": [
+    {
+      "path": "data/processed/trades_1m.csv",
+      "rows": 61,
+      "size_bytes": 22134,
+      "sha256": "8504218e5b160676e0518bbab89df823b784554709c0544f41c4a7caa26ff5a7"
+    },
+    {
+      "path": "data/processed/trades_5m.csv",
+      "rows": 61,
+      "size_bytes": 22313,
+      "sha256": "a04ce502819819039bc263976704c9a6d2f63780571427cbe740d0502eadf720"
+    },
+    {
+      "path": "data/processed/trades_15m.csv",
+      "rows": 30,
+      "size_bytes": 11364,
+      "sha256": "a6c400a545e4a67679b228b89e5b08a4f55f8154477559a6342cc15f05108ef8"
+    },
+    {
+      "path": "data/processed/trades_30m.csv",
+      "rows": 28,
+      "size_bytes": 10585,
+      "sha256": "449bc9cea0b417cd6a912b30579b2f6deef6651f04258649cc4103dd1e8a00e9"
+    },
+    {
+      "path": "data/processed/trades_1h.csv",
+      "rows": 61,
+      "size_bytes": 22278,
+      "sha256": "8a0499b57c766a464351cc4edecdc9a43e5fffe7de522e7712d6324a27f1abe0"
+    },
+    {
+      "path": "data/processed/trades_2h.csv",
+      "rows": 28,
+      "size_bytes": 10512,
+      "sha256": "1cf99c70106b6a6562111a8e9e1ade8ecdc203d106aaae0ee24546c0adbf4e95"
+    },
+    {
+      "path": "data/processed/trades_4h.csv",
+      "rows": 27,
+      "size_bytes": 10211,
+      "sha256": "c8a770b2f2cce15a295405374f14bb780bd83551d039aadcb7c396c6a551fbec"
+    },
+    {
+      "path": "data/processed/trades_1d.csv",
+      "rows": 27,
+      "size_bytes": 10066,
+      "sha256": "f1f46f1c06ef2379ec4dc4c4298d7420f4e4c6de7dd2eef6ee5cedc1bb0990ff"
+    },
+    {
+      "path": "data/processed/normalized_trades.csv",
+      "rows": 323,
+      "size_bytes": 115865,
+      "sha256": "87ff031b35593348b48f95b93cffbaad5cd2821ef6d3a8b1552f10ce644981ef"
+    },
+    {
+      "path": "data/processed/rejected_trades.csv",
+      "rows": 2,
+      "size_bytes": 1822,
+      "sha256": "7dba90952cef13bc45003ec953b2eb66a8f485a9f18c4edb576d34395555c376"
+    },
+    {
+      "path": "results/tables/processed_dataset_summary.csv",
+      "rows": 8,
+      "size_bytes": 2301,
+      "sha256": "82c17ba8a0305880275765fa794a67c33fa7197a8cd92c8f8bb492f042fd388a"
+    }
+  ],
+  "report_path": "results/reports/preprocessing_report.json",
+  "summary_path": "results/tables/processed_dataset_summary.csv",
+  "reproducibility": {
+    "deterministic_content": true,
+    "wall_clock_timestamp_embedded": false,
+    "atomic_writes": true
+  }
+}

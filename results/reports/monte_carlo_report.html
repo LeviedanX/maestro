@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><title>MAESTRO-X Monte Carlo Report</title><style>
+body { font-family: Inter, Arial, sans-serif; margin: 36px auto; max-width: 1180px; color: #172033; line-height: 1.55; padding: 0 24px; }
+h1, h2, h3 { color: #111827; }
+.banner { border-left: 5px solid #b45309; background: #fff7ed; padding: 14px 18px; margin: 20px 0; }
+.ok { border-left-color: #047857; background: #ecfdf5; }
+table { border-collapse: collapse; width: 100%; margin: 16px 0 28px; font-size: 13px; }
+th, td { border: 1px solid #d5dbe5; padding: 7px 9px; text-align: right; }
+th { background: #172033; color: white; }
+td:first-child, th:first-child { text-align: left; }
+img { max-width: 100%; border: 1px solid #d5dbe5; }
+code { background: #f3f4f6; padding: 2px 5px; }
+.muted { color: #596579; }
+</style></head>
+<body>
+<h1>MAESTRO-X Monte Carlo Robustness Report</h1>
+<div class="banner"><strong>Scope:</strong> observed normalized rows only. Publication claim gate: <code>blocked</code>. Hasil ini tidak menggunakan log trade lengkap.</div>
+<h2>Metode</h2>
+<p>Untuk setiap timeframe, PnL realized diacak melalui 10.000 permutasi tanpa replacement dengan seed tetap. Setiap path dimulai dari USD 40. Ruin didefinisikan sebagai equity menyentuh atau melewati 50% initial capital (USD 20).</p>
+<p>Karena setiap permutasi memakai himpunan trade yang sama, terminal return bersifat invariant dan interval persentil terminal return degenerat. Analisis utama adalah distribusi maximum drawdown serta frekuensi pelanggaran ruin threshold. Interval yang dilaporkan adalah interval simulasi, bukan confidence interval inferensial.</p>
+<h2>Ringkasan hasil</h2>
+<table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>timeframe</th>
+      <th>trade_count</th>
+      <th>simulations</th>
+      <th>median_terminal_return_pct</th>
+      <th>median_max_drawdown_pct</th>
+      <th>max_drawdown_interval_95_lower_pct</th>
+      <th>max_drawdown_interval_95_upper_pct</th>
+      <th>worst_max_drawdown_pct</th>
+      <th>ruin_probability_pct</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1m</td>
+      <td>61</td>
+      <td>10000</td>
+      <td>15.5775</td>
+      <td>9.0787</td>
+      <td>5.5005</td>
+      <td>15.6946</td>
+      <td>22.6450</td>
+      <td>0.0000</td>
+    </tr>
+    <tr>
+      <td>5m</td>
+      <td>61</td>
+      <td>10000</td>
+      <td>31.4400</td>
+      <td>6.5703</td>
+      <td>4.0103</td>
+      <td>11.7832</td>
+      <td>20.5500</td>
+      <td>0.0000</td>
+    </tr>
+    <tr>
+      <td>15m</td>
+      <td>30</td>
+      <td>10000</td>
+      <td>12.6550</td>
+      <td>4.0401</td>
+      <td>2.4896</td>
+      <td>7.2874</td>
+      <td>12.9162</td>
+      <td>0.0000</td>
+    </tr>
+    <tr>
+      <td>30m</td>
+      <td>28</td>
+      <td>10000</td>
+      <td>-1.2050</td>
+      <td>7.0261</td>
+      <td>4.3927</td>
+      <td>10.9661</td>
+      <td>14.5831</td>
+      <td>0.0000</td>
+    </tr>
+    <tr>
+      <td>1h</td>
+      <td>60</td>
+      <td>10000</td>
+      <td>28.7725</td>
+      <td>7.1601</td>
+      <td>4.3696</td>
+      <td>12.8229</td>
+      <td>20.4257</td>
+      <td>0.0000</td>
+    </tr>
+    <tr>
+      <td>2h</td>
+      <td>28</td>
+      <td>10000</td>
+      <td>7.0675</td>
+      <td>4.6574</td>
+      <td>2.6636</td>
+      <td>8.2133</td>
+      <td>11.9620</td>
+      <td>0.0000</td>
+    </tr>
+    <tr>
+      <td>4h</td>
+      <td>28</td>
+      <td>10000</td>
+      <td>21.1725</td>
+      <td>2.9052</td>
+      <td>1.5650</td>
+      <td>5.4479</td>
+      <td>8.7363</td>
+      <td>0.0000</td>
+    </tr>
+    <tr>
+      <td>1D</td>
+      <td>28</td>
+      <td>10000</td>
+      <td>8.6750</td>
+      <td>6.5397</td>
+      <td>3.8741</td>
+      <td>11.2733</td>
+      <td>17.3553</td>
+      <td>0.0000</td>
+    </tr>
+  </tbody>
+</table>
+<h2>Distribusi drawdown</h2>
+<img src="../figures/monte_carlo_drawdown_distribution.png" alt="Distribusi Monte Carlo maximum drawdown">
+<h2>Batas interpretasi</h2>
+<ul>
+<li>Permutasi hanya menguji sequence risk; metode ini tidak memodelkan regime shift, perubahan distribusi, spread, slippage, atau trade yang hilang.</li>
+<li>Probabilitas ruin 0% berarti tidak ada pelanggaran dalam 10.000 path subset ini, bukan bukti probabilitas ruin populasi sama dengan nol.</li>
+<li>Hasil antar-timeframe tidak sebanding secara kausal karena periode dan kelengkapan sampel berbeda.</li>
+</ul>
+</body></html>

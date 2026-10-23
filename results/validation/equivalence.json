@@ -1,0 +1,28 @@
+{
+  "baseline": {
+    "file": "indikatorupgrade(1).pine",
+    "sha256": "15ceb417c7dcaf4738db4550e7a1e1fc8b3d2a548941047cb7142d87b2e9ef30",
+    "lines": 1460
+  },
+  "candidate": {
+    "file": "MAESTRO-X_v1.0.pine",
+    "sha256": "c73fb6a864c5d51547ae8758d6eac89753d96fc301d1a16b64c90f3d61eb906b",
+    "lines": 1555
+  },
+  "static_equivalence_checks": {
+    "input_inventory_identical": true,
+    "input_group_inventory_identical": true,
+    "executable_text_identical_after_bijection": true,
+    "execution_call_sequence_identical": true,
+    "numeric_literal_sequence_identical": true,
+    "execution_call_counts_identical": true
+  },
+  "input_count": 96,
+  "identifier_bijection_count": 245,
+  "runtime_backtest": {
+    "executed": false,
+    "reason": "TradingView Pine compiler/broker emulator and a fixed symbol-data-timeframe test matrix were not available locally.",
+    "metrics_claimed": false
+  },
+  "status": "passed"
+}
